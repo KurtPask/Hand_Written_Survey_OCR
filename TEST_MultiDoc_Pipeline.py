@@ -35,21 +35,23 @@ from google.cloud import vision
 from openai import OpenAI
 from dotenv import load_dotenv
 
+from survey_ocr.config import get_config
 # -------------------------------------------------------------------------
 # USER CONFIG
 # -------------------------------------------------------------------------
 
-GCP_VISION_KEY = r"C:\Users\jerom\Projects\DOCEXTRACT\gcp-vision-key.json"
+_CONFIG = get_config()
+GCP_VISION_KEY = str(_CONFIG.gcp_vision_key) if _CONFIG.gcp_vision_key else ""
 
-SCANNED_DOCS_DIR = r"C:\Users\jerom\Projects\DOCEXTRACT\ScannedDocs"
+SCANNED_DOCS_DIR = str(_CONFIG.scanned_docs_dir)
 
-OUTPUT_DIR = r"C:\Users\jerom\Projects\DOCEXTRACT\AlignedOutput"
+OUTPUT_DIR = str(_CONFIG.output_dir)
 RAW_OCR_DIR = os.path.join(OUTPUT_DIR, "raw_ocr_pages")
 
-RESULTS_ALL_JSON = os.path.join(OUTPUT_DIR, "high_risk_forms_all.json")
-ANALYSIS_JSON = os.path.join(OUTPUT_DIR, "high_risk_forms_analysis.json")
+RESULTS_ALL_JSON = str(_CONFIG.results_all_json)
+ANALYSIS_JSON = str(_CONFIG.analysis_json)
 
-DOTENV_PATH = r"C:\Users\jerom\Projects\DOCEXTRACT\.env"
+DOTENV_PATH = str(_CONFIG.dotenv_path)
 
 MAX_HEADER_TOKENS = 200
 USE_LLM_FOR_ANSWERS = True

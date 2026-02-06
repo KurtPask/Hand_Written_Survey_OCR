@@ -34,21 +34,23 @@ import matplotlib.pyplot as plt
 from dotenv import load_dotenv
 from openai import OpenAI
 
+from survey_ocr.config import get_config
 
 # =============================================================================
 # CONFIG
 # =============================================================================
 
-SCANNED_DOCS_DIR = r"C:\Users\jerom\Projects\DOCEXTRACT\ScannedDocs"
-DOTENV_PATH = r"C:\Users\jerom\Projects\DOCEXTRACT\.env"
+_CONFIG = get_config()
+SCANNED_DOCS_DIR = str(_CONFIG.scanned_docs_dir)
+DOTENV_PATH = str(_CONFIG.dotenv_path)
 
-OUTPUT_DIR = r"C:\Users\jerom\Projects\DOCEXTRACT\AlignedOutput"
-RAW_OAI_DIR = os.path.join(OUTPUT_DIR, "raw_openai_outputs_low_token")
+OUTPUT_DIR = str(_CONFIG.output_dir)
+RAW_OAI_DIR = str(_CONFIG.raw_oai_dir)
 
-RESULTS_ALL_JSON = os.path.join(OUTPUT_DIR, "high_risk_forms_all.json")
-ANALYSIS_JSON = os.path.join(OUTPUT_DIR, "high_risk_forms_analysis.json")
+RESULTS_ALL_JSON = str(_CONFIG.results_all_json)
+ANALYSIS_JSON = str(_CONFIG.analysis_json)
 
-ANALYSIS_CHARTS_DIR = os.path.join(OUTPUT_DIR, "analysis_charts")
+ANALYSIS_CHARTS_DIR = str(_CONFIG.analysis_charts_dir)
 
 RENDER_DPI = 150
 MAX_LONG_EDGE = 1100
