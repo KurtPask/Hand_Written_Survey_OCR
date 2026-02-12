@@ -469,6 +469,65 @@ class TrOCREngine:
         confs = [(-1.0 if (c is None or (isinstance(c, float) and math.isnan(c))) else float(c)) for c in confs]
         return texts, confs
 
+
+@dataclass
+class OCRModelBundle:
+    """Container for OCR engines so they can be loaded once and reused."""
+
+    easy: EasyOCREngine
+    trocr_printed: Optional[TrOCREngine]
+    trocr_handwritten: Optional[TrOCREngine]
+
+
+_MODEL_BUNDLE_CACHE: Dict[str, OCRModelBundle] = {}
+
+
+def _bundle_cache_key(cfg: PipelineConfig, device: str) -> str:
+    return "|".join([
+        dbfs_to_local(cfg.trocr_printed_path),
+        dbfs_to_local(cfg.trocr_handwritten_path),
+        dbfs_to_local(cfg.easyocr_model_dir) if cfg.easyocr_model_dir else "",
+        str(cfg.enable_easyocr),
+        ",".join(cfg.easyocr_langs),
+        device,
+    ])
+
+
+def load_ocr_model_bundle(
+    cfg: PipelineConfig,
+    device: str = "cpu",
+    use_cache: bool = True,
+    load_handwritten: bool = True,
+) -> OCRModelBundle:
+    """
+    Load OCR engines once and optionally reuse them via an in-process cache.
+
+    This is useful for Databricks iterative development where model loading
+    dominates runtime. Re-running OCR with the same paths can reuse cached
+    engines and skip model reload cost.
+    """
+    cache_key = _bundle_cache_key(cfg, device)
+    if use_cache and cache_key in _MODEL_BUNDLE_CACHE:
+        return _MODEL_BUNDLE_CACHE[cache_key]
+
+    easy = EasyOCREngine(cfg)
+    trocr_printed = TrOCREngine(cfg.trocr_printed_path, device=device)
+    trocr_handwritten = TrOCREngine(cfg.trocr_handwritten_path, device=device) if load_handwritten else None
+
+    bundle = OCRModelBundle(
+        easy=easy,
+        trocr_printed=trocr_printed,
+        trocr_handwritten=trocr_handwritten,
+    )
+    if use_cache:
+        _MODEL_BUNDLE_CACHE[cache_key] = bundle
+    return bundle
+
+
+def clear_ocr_model_bundle_cache() -> None:
+    """Clear cached OCR model bundles (useful to force model reload)."""
+    _MODEL_BUNDLE_CACHE.clear()
+
 # =========================
 #     BOX/CROPPING
 # =========================
