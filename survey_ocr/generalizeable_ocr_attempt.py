@@ -261,6 +261,16 @@ def process_pdf(pdf_path: str, cfg: PipelineConfig,
     }
 
 
+
+
+def run_ocr_with_loaded_models(local_pdf_paths: List[str], cfg: PipelineConfig, model_bundle: OCRModelBundle) -> None:
+    """Run OCR with preloaded models so repeated iterations avoid reload overhead."""
+    for i, pdf_local in enumerate(local_pdf_paths, 1):
+        print(f"\n[INFO] ({i}/{len(local_pdf_paths)}) {pdf_local}")
+        res = process_pdf(pdf_local, cfg, model_bundle.easy, model_bundle.trocr_printed, model_bundle.trocr_handwritten)
+        write_outputs(res, cfg)
+        print(f"[OK] {res['doc_id']} elapsed_ms={res['elapsed_ms']}")
+
 def list_pdfs(input_path: str, recursive: bool) -> List[str]:
     p = dbfs_to_local(input_path)
     if os.path.isfile(p) and p.lower().endswith(".pdf"):
@@ -513,20 +523,18 @@ if cfg.torch_num_threads and cfg.torch_num_threads > 0:
 
 # ---------- Init engines ----------
 print("[INFO] Initializing OCR engines...")
-easy = EasyOCREngine(cfg)  # uses EasyOCR if installed
-trocr_printed = TrOCREngine(cfg.trocr_printed_path, device="cpu")
-trocr_hw = TrOCREngine(cfg.trocr_handwritten_path, device="cpu")
+# Models are cached in-process by path/config, so repeated runs in the same
+# cluster session can skip reloads and iterate faster.
+model_bundle = load_ocr_model_bundle(cfg, device="cpu", use_cache=True, load_handwritten=True)
+easy = model_bundle.easy
+trocr_printed = model_bundle.trocr_printed
+trocr_hw = model_bundle.trocr_handwritten
 
 # ---------- Run ----------
 t0 = time.time()
 print(f"[INFO] Running pipeline on {len(local_pdf_paths)} local PDFs...")
 
-for i, pdf_local in enumerate(local_pdf_paths, 1):
-    print(f"\n[INFO] ({i}/{len(local_pdf_paths)}) {pdf_local}")
-    res = process_pdf(pdf_local, cfg, easy, trocr_printed, trocr_hw)
-    write_outputs(res, cfg)
-    print(f"[OK] {res['doc_id']} elapsed_ms={res['elapsed_ms']}")
-    if i > 3: break
+run_ocr_with_loaded_models(local_pdf_paths[:4], cfg, model_bundle)
 
 elapsed = time.time() - t0
 print(f"\n[INFO] Done OCR. Total seconds: {elapsed:.1f}")
