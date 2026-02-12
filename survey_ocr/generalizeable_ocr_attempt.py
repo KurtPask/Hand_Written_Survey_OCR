@@ -1,6 +1,8 @@
 
 from __future__ import annotations
 
+from ocr_utils import *
+
 import os
 import re
 import json
@@ -8,33 +10,7 @@ import math
 import time
 import glob
 import argparse
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
-from transformers import VisionEncoderDecoderModel, TrOCRProcessor
-import numpy as np
-
-# --- Optional dependencies ---
-try:
-    import fitz  # PyMuPDF
-except Exception as e:
-    raise RuntimeError("PyMuPDF (fitz) is required. Install: pip install pymupdf") from e
-
-try:
-    import cv2
-except Exception as e:
-    raise RuntimeError("OpenCV is required. Install: pip install opencv-python-headless") from e
-
-try:
-    from PIL import Image
-except Exception as e:
-    raise RuntimeError("Pillow is required. Install: pip install pillow") from e
-
-# Transformers for TrOCR
-try:
-    import torch
-    from transformers import VisionEncoderDecoderModel, TrOCRProcessor
-except Exception as e:
-    raise RuntimeError("transformers + torch + sentencepiece required. Install: pip install transformers torch sentencepiece") from e
+from typing import Any, Dict, List, Optional
 
 # =========================
 #      MAIN PIPELINE
@@ -364,6 +340,9 @@ RENDER_DPI = 350
 MAX_PAGES = None          # set e.g. 3 for a fast test
 TORCH_NUM_THREADS = 8     # CPU threads for torch (set 0 to leave default)
 
+# Better defaults for scanned forms: adaptive binarization often helps text isolation.
+ENABLE_BINARIZE = True
+
 # ---------- Internal staging dirs (local) ----------
 RUN_ID = uuid.uuid4().hex[:8]
 LOCAL_STAGE_ROOT = f"/dbfs/tmp/pdf_ocr_run_{RUN_ID}"
@@ -451,6 +430,7 @@ cfg = PipelineConfig(
 
     render_dpi=RENDER_DPI,
     max_pages=MAX_PAGES,
+    binarize=ENABLE_BINARIZE,
 
     # You can tweak thresholds if needed:
     # easyocr_keep_conf=0.65,
