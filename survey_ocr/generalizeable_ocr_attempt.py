@@ -1,6 +1,8 @@
 
 from __future__ import annotations
 
+from ocr_utils import *
+
 import os
 import re
 import json
@@ -8,33 +10,7 @@ import math
 import time
 import glob
 import argparse
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
-from transformers import VisionEncoderDecoderModel, TrOCRProcessor
-import numpy as np
-
-# --- Optional dependencies ---
-try:
-    import fitz  # PyMuPDF
-except Exception as e:
-    raise RuntimeError("PyMuPDF (fitz) is required. Install: pip install pymupdf") from e
-
-try:
-    import cv2
-except Exception as e:
-    raise RuntimeError("OpenCV is required. Install: pip install opencv-python-headless") from e
-
-try:
-    from PIL import Image
-except Exception as e:
-    raise RuntimeError("Pillow is required. Install: pip install pillow") from e
-
-# Transformers for TrOCR
-try:
-    import torch
-    from transformers import VisionEncoderDecoderModel, TrOCRProcessor
-except Exception as e:
-    raise RuntimeError("transformers + torch + sentencepiece required. Install: pip install transformers torch sentencepiece") from e
+from typing import Any, Dict, List, Optional
 
 # =========================
 #      MAIN PIPELINE
@@ -176,35 +152,102 @@ def process_pdf(pdf_path: str, cfg: PipelineConfig,
             })
 
         else:
-            # Fallback: whole-page TrOCR (worse for handwriting + layout, but works if EasyOCR not available)
+            # Fallback: detect candidate text regions with OpenCV and run region-level TrOCR.
+            # This is much better than whole-page TrOCR for dense forms.
             if trocr_printed is None:
                 raise RuntimeError("No OCR engine available. Install easyocr or provide TrOCR models.")
 
-            pil = bgr_to_pil(page_bgr)
-            txt_p, conf_p = trocr_printed.recognize_batch([pil])
-            txt_p, conf_p = txt_p[0].strip(), conf_p[0]
+            boxes = detect_text_regions_cv(page_bgr, cfg)
+            regions: List[Dict[str, Any]] = []
 
-            txt = txt_p
-            conf = conf_p
-            mdl = "trocr-printed-page"
+            # If detector finds nothing, keep a last-resort whole-page pass.
+            if not boxes:
+                pil = bgr_to_pil(page_bgr)
+                txt_p, conf_p = trocr_printed.recognize_batch([pil])
+                txt_p, conf_p = txt_p[0].strip(), conf_p[0]
 
-            if trocr_hw is not None and (conf_p < cfg.trocr_printed_min_conf or looks_like_gibberish(txt_p)):
-                txt_h, conf_h = trocr_hw.recognize_batch([pil])
-                txt_h, conf_h = txt_h[0].strip(), conf_h[0]
-                if cfg.trocr_choose_best and conf_h > conf_p:
-                    txt, conf, mdl = txt_h, conf_h, "trocr-handwritten-page"
+                txt = txt_p
+                conf = conf_p
+                mdl = "trocr-printed-page"
 
-            results_pages.append({
-                "page": page_idx,
-                "source": "ocr_page_fallback",
-                "regions": [{
+                if trocr_hw is not None and (conf_p < cfg.trocr_printed_min_conf or looks_like_gibberish(txt_p)):
+                    txt_h, conf_h = trocr_hw.recognize_batch([pil])
+                    txt_h, conf_h = txt_h[0].strip(), conf_h[0]
+                    if cfg.trocr_choose_best and conf_h > conf_p:
+                        txt, conf, mdl = txt_h, conf_h, "trocr-handwritten-page"
+
+                regions = [{
                     "bbox_points": None,
                     "bbox_xyxy": None,
                     "text": txt,
                     "confidence": float(conf),
                     "model": mdl
-                }],
-                "page_text": txt,
+                }]
+                page_text = txt
+                source = "ocr_page_fallback"
+            else:
+                crops_pil = []
+                crop_meta = []
+                for xyxy in boxes:
+                    crop = crop_xyxy(page_bgr, xyxy, pad=cfg.crop_pad_px)
+                    crops_pil.append(bgr_to_pil(crop))
+                    crop_meta.append(xyxy)
+
+                printed_texts: List[str] = []
+                printed_confs: List[float] = []
+                for j in range(0, len(crops_pil), cfg.trocr_batch_size):
+                    t, c = trocr_printed.recognize_batch(crops_pil[j:j+cfg.trocr_batch_size])
+                    printed_texts.extend([x.strip() for x in t])
+                    printed_confs.extend(c)
+
+                chosen_texts = printed_texts[:]
+                chosen_confs = printed_confs[:]
+                chosen_model = ["trocr-printed"] * len(chosen_texts)
+
+                if trocr_hw is not None:
+                    need_hw = [k for k, c in enumerate(printed_confs) if c < cfg.trocr_printed_min_conf or looks_like_gibberish(printed_texts[k])]
+                    if need_hw:
+                        hw_imgs = [crops_pil[k] for k in need_hw]
+                        hw_texts_all: List[str] = []
+                        hw_confs_all: List[float] = []
+                        for j in range(0, len(hw_imgs), cfg.trocr_batch_size):
+                            t, c = trocr_hw.recognize_batch(hw_imgs[j:j+cfg.trocr_batch_size])
+                            hw_texts_all.extend([x.strip() for x in t])
+                            hw_confs_all.extend(c)
+                        for idx_local, k in enumerate(need_hw):
+                            hw_text = hw_texts_all[idx_local]
+                            hw_conf = hw_confs_all[idx_local]
+                            if cfg.trocr_choose_best:
+                                if hw_conf > chosen_confs[k]:
+                                    chosen_texts[k] = hw_text
+                                    chosen_confs[k] = hw_conf
+                                    chosen_model[k] = "trocr-handwritten"
+                            else:
+                                chosen_texts[k] = hw_text
+                                chosen_confs[k] = hw_conf
+                                chosen_model[k] = "trocr-handwritten"
+
+                for i_box, xyxy in enumerate(crop_meta):
+                    txt = chosen_texts[i_box]
+                    if not txt:
+                        continue
+                    regions.append({
+                        "bbox_points": None,
+                        "bbox_xyxy": list(xyxy),
+                        "text": txt,
+                        "confidence": float(chosen_confs[i_box]),
+                        "model": chosen_model[i_box],
+                    })
+
+                regions = sort_boxes_reading_order(regions)
+                page_text = "\n".join([r["text"] for r in regions if (r["text"] or "").strip()])
+                source = "ocr_cv_trocr_fallback"
+
+            results_pages.append({
+                "page": page_idx,
+                "source": source,
+                "regions": regions,
+                "page_text": page_text,
             })
 
     doc.close()
@@ -364,6 +407,9 @@ RENDER_DPI = 350
 MAX_PAGES = None          # set e.g. 3 for a fast test
 TORCH_NUM_THREADS = 8     # CPU threads for torch (set 0 to leave default)
 
+# Better defaults for scanned forms: adaptive binarization often helps text isolation.
+ENABLE_BINARIZE = True
+
 # ---------- Internal staging dirs (local) ----------
 RUN_ID = uuid.uuid4().hex[:8]
 LOCAL_STAGE_ROOT = f"/dbfs/tmp/pdf_ocr_run_{RUN_ID}"
@@ -451,6 +497,7 @@ cfg = PipelineConfig(
 
     render_dpi=RENDER_DPI,
     max_pages=MAX_PAGES,
+    binarize=ENABLE_BINARIZE,
 
     # You can tweak thresholds if needed:
     # easyocr_keep_conf=0.65,
