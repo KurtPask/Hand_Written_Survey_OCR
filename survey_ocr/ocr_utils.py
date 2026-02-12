@@ -61,6 +61,8 @@ class PipelineConfig:
     render_dpi: int = 250        # 200–300 is a good range for OCR
     max_pages: Optional[int] = None  # e.g., 5 for testing
     embedded_text_min_chars: int = 30  # If embedded text >= this, skip OCR
+    embedded_text_min_words: int = 8
+    use_embedded_text_fast_path: bool = False
 
     # ---- Preprocess ----
     do_preprocess: bool = True
@@ -77,6 +79,8 @@ class PipelineConfig:
 
     # Keep EasyOCR output if confidence high and text is "not gibberish"
     easyocr_keep_conf: float = 0.65
+    easyocr_min_box_area_px: int = 450
+    easyocr_min_box_side_px: int = 12
 
     # TrOCR fallback thresholds
     trocr_printed_min_conf: float = 0.35  # if printed conf below this, try handwritten
@@ -88,6 +92,8 @@ class PipelineConfig:
     min_region_side_px: int = 12
     crop_pad_px: int = 6
     trocr_batch_size: int = 8
+    trocr_max_new_tokens: int = 96
+    trocr_num_beams: int = 4
     torch_num_threads: int = 0        # 0 = leave default; else set e.g. 8
 
     # Output behavior
@@ -369,6 +375,38 @@ def detect_text_regions_cv(img_bgr: np.ndarray, cfg: PipelineConfig) -> List[Tup
     boxes = sorted(boxes, key=lambda b: (b[1], b[0]))
     return boxes[: cfg.max_regions_per_page]
 
+
+def merge_line_boxes(
+    boxes: List[Tuple[int, int, int, int]],
+    max_x_gap: int = 24,
+    y_overlap_ratio: float = 0.45,
+) -> List[Tuple[int, int, int, int]]:
+    """Merge horizontally adjacent boxes that appear to be from the same text line."""
+    if not boxes:
+        return []
+
+    boxes = sorted(boxes, key=lambda b: (b[1], b[0]))
+    merged: List[Tuple[int, int, int, int]] = []
+
+    for box in boxes:
+        x0, y0, x1, y1 = box
+        if not merged:
+            merged.append(box)
+            continue
+
+        mx0, my0, mx1, my1 = merged[-1]
+        overlap = max(0, min(y1, my1) - max(y0, my0))
+        min_h = max(1, min(y1 - y0, my1 - my0))
+        same_line = (overlap / min_h) >= y_overlap_ratio
+        close_x = (x0 - mx1) <= max_x_gap
+
+        if same_line and close_x:
+            merged[-1] = (min(mx0, x0), min(my0, y0), max(mx1, x1), max(my1, y1))
+        else:
+            merged.append(box)
+
+    return merged
+
 class TrOCREngine:
     def __init__(self, model_path: str, device: str = "cpu"):
         self.model_path = dbfs_to_local(model_path)
@@ -441,7 +479,8 @@ class TrOCREngine:
     def recognize_batch(
         self,
         pil_images: List[Image.Image],
-        max_new_tokens: int = 64
+        max_new_tokens: int = 64,
+        num_beams: int = 2,
     ) -> Tuple[List[str], List[float]]:
         if not pil_images:
             return [], []
@@ -451,7 +490,7 @@ class TrOCREngine:
         outputs = self.model.generate(
             pixel_values,
             max_new_tokens=max_new_tokens,
-            num_beams=2,
+            num_beams=num_beams,
             do_sample=False,
             return_dict_in_generate=True,
             output_scores=True,
