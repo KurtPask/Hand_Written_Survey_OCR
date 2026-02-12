@@ -23,6 +23,16 @@ def extract_embedded_text(page: fitz.Page) -> str:
     except Exception:
         return ""
 
+
+def should_use_embedded_text(embedded: str, cfg: PipelineConfig) -> bool:
+    if not cfg.use_embedded_text_fast_path:
+        return False
+    t = (embedded or "").strip()
+    if not t:
+        return False
+    word_count = len(re.findall(r"\w+", t))
+    return len(t) >= cfg.embedded_text_min_chars and word_count >= cfg.embedded_text_min_words
+
 def process_pdf(pdf_path: str, cfg: PipelineConfig,
                 easy: EasyOCREngine,
                 trocr_printed: Optional[TrOCREngine],
@@ -43,7 +53,7 @@ def process_pdf(pdf_path: str, cfg: PipelineConfig,
         page = doc.load_page(page_idx)
 
         embedded = extract_embedded_text(page)
-        if len(embedded) >= cfg.embedded_text_min_chars:
+        if should_use_embedded_text(embedded, cfg):
             # Fast path
             results_pages.append({
                 "page": page_idx,
@@ -65,6 +75,12 @@ def process_pdf(pdf_path: str, cfg: PipelineConfig,
             regions = []
             for bbox_pts, text, conf in raw[: cfg.max_regions_per_page]:
                 xyxy = bbox_points_to_xyxy(bbox_pts)
+                x0, y0, x1, y1 = xyxy
+                area = max(0, (x1 - x0) * (y1 - y0))
+                if area < cfg.easyocr_min_box_area_px:
+                    continue
+                if (x1 - x0) < cfg.easyocr_min_box_side_px or (y1 - y0) < cfg.easyocr_min_box_side_px:
+                    continue
                 regions.append({
                     "bbox_points": bbox_pts,
                     "bbox_xyxy": list(xyxy),
@@ -94,7 +110,11 @@ def process_pdf(pdf_path: str, cfg: PipelineConfig,
                 printed_confs = []
                 for j in range(0, len(crops_pil), cfg.trocr_batch_size):
                     batch_imgs = crops_pil[j:j+cfg.trocr_batch_size]
-                    t, c = trocr_printed.recognize_batch(batch_imgs)
+                    t, c = trocr_printed.recognize_batch(
+                        batch_imgs,
+                        max_new_tokens=cfg.trocr_max_new_tokens,
+                        num_beams=cfg.trocr_num_beams,
+                    )
                     printed_texts.extend([x.strip() for x in t])
                     printed_confs.extend(c)
 
@@ -110,7 +130,11 @@ def process_pdf(pdf_path: str, cfg: PipelineConfig,
                         hw_texts_all = []
                         hw_confs_all = []
                         for j in range(0, len(hw_imgs), cfg.trocr_batch_size):
-                            t, c = trocr_hw.recognize_batch(hw_imgs[j:j+cfg.trocr_batch_size])
+                            t, c = trocr_hw.recognize_batch(
+                                hw_imgs[j:j+cfg.trocr_batch_size],
+                                max_new_tokens=cfg.trocr_max_new_tokens,
+                                num_beams=cfg.trocr_num_beams,
+                            )
                             hw_texts_all.extend([x.strip() for x in t])
                             hw_confs_all.extend(c)
 
@@ -158,12 +182,17 @@ def process_pdf(pdf_path: str, cfg: PipelineConfig,
                 raise RuntimeError("No OCR engine available. Install easyocr or provide TrOCR models.")
 
             boxes = detect_text_regions_cv(page_bgr, cfg)
+            boxes = merge_line_boxes(boxes)
             regions: List[Dict[str, Any]] = []
 
             # If detector finds nothing, keep a last-resort whole-page pass.
             if not boxes:
                 pil = bgr_to_pil(page_bgr)
-                txt_p, conf_p = trocr_printed.recognize_batch([pil])
+                txt_p, conf_p = trocr_printed.recognize_batch(
+                    [pil],
+                    max_new_tokens=cfg.trocr_max_new_tokens,
+                    num_beams=cfg.trocr_num_beams,
+                )
                 txt_p, conf_p = txt_p[0].strip(), conf_p[0]
 
                 txt = txt_p
@@ -171,7 +200,11 @@ def process_pdf(pdf_path: str, cfg: PipelineConfig,
                 mdl = "trocr-printed-page"
 
                 if trocr_hw is not None and (conf_p < cfg.trocr_printed_min_conf or looks_like_gibberish(txt_p)):
-                    txt_h, conf_h = trocr_hw.recognize_batch([pil])
+                    txt_h, conf_h = trocr_hw.recognize_batch(
+                        [pil],
+                        max_new_tokens=cfg.trocr_max_new_tokens,
+                        num_beams=cfg.trocr_num_beams,
+                    )
                     txt_h, conf_h = txt_h[0].strip(), conf_h[0]
                     if cfg.trocr_choose_best and conf_h > conf_p:
                         txt, conf, mdl = txt_h, conf_h, "trocr-handwritten-page"
@@ -196,7 +229,11 @@ def process_pdf(pdf_path: str, cfg: PipelineConfig,
                 printed_texts: List[str] = []
                 printed_confs: List[float] = []
                 for j in range(0, len(crops_pil), cfg.trocr_batch_size):
-                    t, c = trocr_printed.recognize_batch(crops_pil[j:j+cfg.trocr_batch_size])
+                    t, c = trocr_printed.recognize_batch(
+                        crops_pil[j:j+cfg.trocr_batch_size],
+                        max_new_tokens=cfg.trocr_max_new_tokens,
+                        num_beams=cfg.trocr_num_beams,
+                    )
                     printed_texts.extend([x.strip() for x in t])
                     printed_confs.extend(c)
 
@@ -211,7 +248,11 @@ def process_pdf(pdf_path: str, cfg: PipelineConfig,
                         hw_texts_all: List[str] = []
                         hw_confs_all: List[float] = []
                         for j in range(0, len(hw_imgs), cfg.trocr_batch_size):
-                            t, c = trocr_hw.recognize_batch(hw_imgs[j:j+cfg.trocr_batch_size])
+                            t, c = trocr_hw.recognize_batch(
+                                hw_imgs[j:j+cfg.trocr_batch_size],
+                                max_new_tokens=cfg.trocr_max_new_tokens,
+                                num_beams=cfg.trocr_num_beams,
+                            )
                             hw_texts_all.extend([x.strip() for x in t])
                             hw_confs_all.extend(c)
                         for idx_local, k in enumerate(need_hw):
@@ -367,6 +408,8 @@ def build_config_from_args(args: argparse.Namespace) -> PipelineConfig:
         render_dpi=args.render_dpi,
         max_pages=args.max_pages,
         embedded_text_min_chars=args.embedded_text_min_chars,
+        embedded_text_min_words=getattr(args, "embedded_text_min_words", 8),
+        use_embedded_text_fast_path=getattr(args, "use_embedded_text_fast_path", False),
 
         do_preprocess=not args.no_preprocess,
         deskew=not args.no_deskew,
@@ -378,12 +421,16 @@ def build_config_from_args(args: argparse.Namespace) -> PipelineConfig:
         easyocr_langs=tuple(args.easyocr_langs.split(",")) if args.easyocr_langs else ("en",),
 
         easyocr_keep_conf=args.easyocr_keep_conf,
+        easyocr_min_box_area_px=getattr(args, "easyocr_min_box_area_px", 450),
+        easyocr_min_box_side_px=getattr(args, "easyocr_min_box_side_px", 12),
         trocr_printed_min_conf=args.trocr_printed_min_conf,
         trocr_choose_best=not args.no_choose_best,
 
         max_regions_per_page=args.max_regions_per_page,
         crop_pad_px=args.crop_pad_px,
         trocr_batch_size=args.trocr_batch_size,
+        trocr_max_new_tokens=getattr(args, "trocr_max_new_tokens", 96),
+        trocr_num_beams=getattr(args, "trocr_num_beams", 4),
         torch_num_threads=args.torch_num_threads,
 
         write_jsonl=not args.no_jsonl,
@@ -508,6 +555,11 @@ cfg = PipelineConfig(
     render_dpi=RENDER_DPI,
     max_pages=MAX_PAGES,
     binarize=ENABLE_BINARIZE,
+    use_embedded_text_fast_path=False,
+    easyocr_min_box_area_px=500,
+    easyocr_min_box_side_px=14,
+    trocr_max_new_tokens=96,
+    trocr_num_beams=4,
 
     # You can tweak thresholds if needed:
     # easyocr_keep_conf=0.65,
