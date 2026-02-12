@@ -52,8 +52,8 @@ ANALYSIS_JSON = str(_CONFIG.analysis_json)
 
 ANALYSIS_CHARTS_DIR = str(_CONFIG.analysis_charts_dir)
 
-RENDER_DPI = 150
-MAX_LONG_EDGE = 1100
+RENDER_DPI = int(os.getenv("DOCEXTRACT_RENDER_DPI", "220"))
+MAX_LONG_EDGE = int(os.getenv("DOCEXTRACT_MAX_LONG_EDGE", "1800"))
 
 MIN_SECONDS_BETWEEN_REQUESTS = 0.05
 OPENAI_RETRIES = 5
@@ -179,6 +179,19 @@ def enhance_handwriting(img_bgr: np.ndarray) -> np.ndarray:
     g = clahe.apply(gray)
     return cv2.cvtColor(g, cv2.COLOR_GRAY2BGR)
 
+def enhance_handwriting_binary(img_bgr: np.ndarray) -> np.ndarray:
+    gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
+    blur = cv2.GaussianBlur(gray, (3, 3), 0)
+    bw = cv2.adaptiveThreshold(
+        blur,
+        255,
+        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv2.THRESH_BINARY,
+        35,
+        11,
+    )
+    return cv2.cvtColor(bw, cv2.COLOR_GRAY2BGR)
+
 def crop_rel(img_bgr: np.ndarray, x0: float, y0: float, x1: float, y1: float) -> np.ndarray:
     h, w = img_bgr.shape[:2]
     X0, Y0 = int(x0*w), int(y0*h)
@@ -294,6 +307,37 @@ def extract_page1(client: OpenAI, model: str, page1_bgr: np.ndarray, raw_path: s
         raw_save_path=raw_path
     )
 
+def _count_nonempty_page1_fields(out: Dict[str, Any]) -> int:
+    if not isinstance(out, dict):
+        return -1
+    c = 0
+    for v in ((out.get("header", {}) or {}).values()):
+        if str(v or "").strip():
+            c += 1
+    answers = out.get("answers", {}) or {}
+    for q in ["q1", "q2", "q3", "q4"]:
+        for v in ((answers.get(q, {}) or {}).values()):
+            if str(v or "").strip():
+                c += 1
+    return c
+
+def extract_page1_ensemble(client: OpenAI, model: str, page1_bgr: np.ndarray, raw_path: str) -> Dict[str, Any]:
+    base = extract_page1(client, model, page1_bgr, raw_path)
+    hi_contrast = openai_json(
+        client,
+        model,
+        prompt_page1_minimal(),
+        images=[("page1_full_binary", enhance_handwriting_binary(page1_bgr))],
+        max_output_tokens=900,
+        raw_save_path=raw_path.replace(".txt", "__binary.txt"),
+    )
+
+    if "error" in hi_contrast and "error" not in base:
+        return base
+    if "error" in base and "error" not in hi_contrast:
+        return hi_contrast
+    return hi_contrast if _count_nonempty_page1_fields(hi_contrast) > _count_nonempty_page1_fields(base) else base
+
 
 # =============================================================================
 # PAGE 2: three-layout flexible extraction
@@ -356,22 +400,46 @@ WSD_PROMPTS (wsd layout):
 """.strip()
 
 def extract_page2_handwriting(client: OpenAI, model: str, page2_bgr: np.ndarray, raw_path: str) -> Dict[str, Any]:
-    p2 = enhance_handwriting(page2_bgr)
+    p2_clahe = enhance_handwriting(page2_bgr)
+    p2_binary = enhance_handwriting_binary(page2_bgr)
 
-    crops = [
-        ("p2_full", crop_rel(p2, 0.01, 0.01, 0.99, 0.99)),
-        ("p2_top", crop_rel(p2, 0.02, 0.02, 0.98, 0.40)),
-        ("p2_mid", crop_rel(p2, 0.02, 0.34, 0.98, 0.72)),
-        ("p2_bottom", crop_rel(p2, 0.02, 0.66, 0.98, 0.98)),
-    ]
+    def _crops(img: np.ndarray) -> List[Tuple[str, np.ndarray]]:
+        return [
+            ("p2_full", crop_rel(img, 0.01, 0.01, 0.99, 0.99)),
+            ("p2_top", crop_rel(img, 0.02, 0.01, 0.98, 0.36)),
+            ("p2_mid_top", crop_rel(img, 0.02, 0.30, 0.98, 0.58)),
+            ("p2_mid_bottom", crop_rel(img, 0.02, 0.52, 0.98, 0.80)),
+            ("p2_bottom", crop_rel(img, 0.02, 0.74, 0.98, 0.99)),
+        ]
 
-    return openai_json(
+    base = openai_json(
         client, model,
         prompt_page2_flexible_three_layouts(CANON_PAGE2_PROMPTS, CANON_PAGE2_PROMPTS_WSD),
-        images=crops,
+        images=_crops(p2_clahe),
         max_output_tokens=1100,
         raw_save_path=raw_path
     )
+
+    second = openai_json(
+        client,
+        model,
+        prompt_page2_flexible_three_layouts(CANON_PAGE2_PROMPTS, CANON_PAGE2_PROMPTS_WSD),
+        images=_crops(p2_binary),
+        max_output_tokens=1100,
+        raw_save_path=raw_path.replace(".txt", "__binary.txt"),
+    )
+
+    def _response_score(out: Dict[str, Any]) -> int:
+        if not isinstance(out, dict) or "error" in out:
+            return -1
+        score = len(str(out.get("trainee_comments", "") or "").strip())
+        for v in ((out.get("staff_comments", {}) or {}).values()):
+            score += len(str(v or "").strip())
+        for qa in (out.get("prompted_qas", []) or []):
+            score += len(str((qa or {}).get("answer", "") or "").strip())
+        return score
+
+    return second if _response_score(second) > _response_score(base) else base
 
 
 # =============================================================================
@@ -1127,7 +1195,7 @@ def process_pdf(pdf_path: str, api_key: str, model: str) -> Dict[str, Any]:
     if PER_DOC_PARALLEL:
         def _do_p1():
             c = OpenAI(api_key=api_key)
-            return extract_page1(c, model, p1, p1_raw)
+            return extract_page1_ensemble(c, model, p1, p1_raw)
 
         def _do_p2():
             c = OpenAI(api_key=api_key)
@@ -1140,7 +1208,7 @@ def process_pdf(pdf_path: str, api_key: str, model: str) -> Dict[str, Any]:
             out2 = f2.result()
     else:
         c = OpenAI(api_key=api_key)
-        out1 = extract_page1(c, model, p1, p1_raw)
+        out1 = extract_page1_ensemble(c, model, p1, p1_raw)
         out2 = extract_page2_handwriting(c, model, p2, p2_raw)
 
     if "error" in (out1 or {}):
