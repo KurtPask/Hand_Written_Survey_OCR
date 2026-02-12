@@ -11,7 +11,6 @@ import glob
 import argparse
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
-from transformers import VisionEncoderDecoderModel, TrOCRProcessor
 import numpy as np
 
 # --- Optional dependencies ---
@@ -233,9 +232,14 @@ def deskew_binary(bin_img: np.ndarray) -> np.ndarray:
     if img.ndim != 2:
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    # Invert so ink becomes 1s
-    inv = 255 - img
-    coords = np.column_stack(np.where(inv > 0))
+    # Build text mask with Otsu thresholding so we use only likely ink pixels.
+    _, mask = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    kernel = np.ones((3, 3), np.uint8)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+
+    # np.where returns (y, x); minAreaRect expects points in (x, y).
+    ys, xs = np.where(mask > 0)
+    coords = np.column_stack((xs, ys))
     if coords.size < 500:
         return bin_img  # not enough signal
 
@@ -325,13 +329,36 @@ class TrOCREngine:
         self.model_path = dbfs_to_local(model_path)
         self.device = device
 
+        self._validate_local_model_dir(self.model_path)
+
         self.processor = TrOCRProcessor.from_pretrained(self.model_path, local_files_only=True)
         self.model = VisionEncoderDecoderModel.from_pretrained(self.model_path, local_files_only=True)
+        if self.model.config.decoder_start_token_id is None and self.processor.tokenizer.cls_token_id is not None:
+            self.model.config.decoder_start_token_id = self.processor.tokenizer.cls_token_id
+        if self.model.config.pad_token_id is None:
+            self.model.config.pad_token_id = self.processor.tokenizer.pad_token_id
+        if self.model.config.eos_token_id is None:
+            self.model.config.eos_token_id = self.processor.tokenizer.sep_token_id
         self.model.to(self.device)
         self.model.eval()
 
         # CPU-friendly
         torch.set_grad_enabled(False)
+
+    @staticmethod
+    def _validate_local_model_dir(model_path: str) -> None:
+        if not os.path.isdir(model_path):
+            raise FileNotFoundError(f"TrOCR model directory does not exist: {model_path}")
+
+        has_weights = any(
+            os.path.exists(os.path.join(model_path, fname))
+            for fname in ("model.safetensors", "pytorch_model.bin")
+        )
+        if not has_weights:
+            raise FileNotFoundError(
+                f"No TrOCR model weights found in {model_path}. "
+                "Expected model.safetensors or pytorch_model.bin."
+            )
 
     @staticmethod
     def _compute_token_confidence(generate_outputs) -> float:
