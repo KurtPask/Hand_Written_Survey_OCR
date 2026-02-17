@@ -6,83 +6,651 @@
     {
       "page_index": 0,
       "anchors": [
-        { "id": "title", "bbox_norm": [0.2608, 0.1095, 0.7503, 0.1276], "expected_text": "STUDENT CRITIQUE OF HIGH-RISK TRAINING" },
-        { "id": "sec1_header", "bbox_norm": [0.132, 0.3973, 0.5341, 0.4141], "expected_text": "I. Using a 1 to 5 rating scale answer the following;" },
-        { "id": "sec2_header", "bbox_norm": [0.1336, 0.487, 0.8791, 0.5037], "expected_text": "2. Using a YES/NO rating" },
-        { "id": "sec3_header", "bbox_norm": [0.1328, 0.6287, 0.8798, 0.6455], "expected_text": "3. Using a YES/NO rating" },
-        { "id": "sec4_header", "bbox_norm": [0.1344, 0.7696, 0.8092, 0.7864], "expected_text": "4. Using a YES/NO ratings" },
-
-        { "id": "sec1_a", "bbox_norm": [0.1835, 0.4274, 0.7143, 0.4444], "expected_text": "A. I felt my safety was always a primary concern of the instructor." },
-        { "id": "sec1_b", "bbox_norm": [0.1835, 0.4615, 0.7585, 0.4785], "expected_text": "B. I felt that the training environment was both safe and non-hazardous." },
-
-        { "id": "sec2_a", "bbox_norm": [0.1831, 0.5388, 0.4561, 0.5555], "expected_text": "A. Training Time Out procedures." },
-        { "id": "sec2_b", "bbox_norm": [0.1831, 0.5561, 0.4083, 0.5729], "expected_text": "B. Emergency Action Plan." },
-        { "id": "sec2_c", "bbox_norm": [0.1831, 0.5733, 0.3964, 0.5903], "expected_text": "C. Tasks to be performed." },
-        { "id": "sec2_d", "bbox_norm": [0.1831, 0.5913, 0.6228, 0.6083], "expected_text": "D. Methods used to determine successful performance." },
-
-        { "id": "sec3_a", "bbox_norm": [0.1847, 0.6821, 0.8205, 0.6989], "expected_text": "A. Safety precautions were reemphasized immediately prior to job performance." },
-        { "id": "sec3_b", "bbox_norm": [0.1847, 0.6985, 0.8206, 0.7153], "expected_text": "B. The instructor evaluated my knowledge of precautions prior to job" },
-        { "id": "sec3_c", "bbox_norm": [0.1831, 0.7323, 0.5219, 0.7491], "expected_text": "C. Laboratory/equipment was safe for use." },
-
-        { "id": "sec4_a", "bbox_norm": [0.1868, 0.8038, 0.6661, 0.8208], "expected_text": "A. Encouraged me to report unsafe or unhealthy conditions." },
-        { "id": "sec4_b", "bbox_norm": [0.1868, 0.8218, 0.459, 0.8388], "expected_text": "B. Encouraged me to do my best." },
-        { "id": "sec4_c", "bbox_norm": [0.1868, 0.8401, 0.7299, 0.8571], "expected_text": "C. Provided a learning environment that was not threatening to me." }
+        {
+          "id": "title",
+          "bbox_norm": [
+            0.2608,
+            0.1095,
+            0.7503,
+            0.1276
+          ],
+          "expected_text": "STUDENT CRITIQUE OF HIGH-RISK TRAINING"
+        },
+        {
+          "id": "sec1_header",
+          "bbox_norm": [
+            0.132,
+            0.3973,
+            0.5341,
+            0.4141
+          ],
+          "expected_text": "I. Using a 1 to 5 rating scale answer the following;"
+        },
+        {
+          "id": "sec2_header",
+          "bbox_norm": [
+            0.1336,
+            0.487,
+            0.8791,
+            0.5037
+          ],
+          "expected_text": "2. Using a YES/NO rating"
+        },
+        {
+          "id": "sec3_header",
+          "bbox_norm": [
+            0.1328,
+            0.6287,
+            0.8798,
+            0.6455
+          ],
+          "expected_text": "3. Using a YES/NO rating"
+        },
+        {
+          "id": "sec4_header",
+          "bbox_norm": [
+            0.1344,
+            0.7696,
+            0.8092,
+            0.7864
+          ],
+          "expected_text": "4. Using a YES/NO ratings"
+        },
+        {
+          "id": "sec1_a",
+          "bbox_norm": [
+            0.1835,
+            0.4274,
+            0.7143,
+            0.4444
+          ],
+          "expected_text": "A. I felt my safety was always a primary concern of the instructor."
+        },
+        {
+          "id": "sec1_b",
+          "bbox_norm": [
+            0.1835,
+            0.4615,
+            0.7585,
+            0.4785
+          ],
+          "expected_text": "B. I felt that the training environment was both safe and non-hazardous."
+        },
+        {
+          "id": "sec2_a",
+          "bbox_norm": [
+            0.1831,
+            0.5388,
+            0.4561,
+            0.5555
+          ],
+          "expected_text": "A. Training Time Out procedures."
+        },
+        {
+          "id": "sec2_b",
+          "bbox_norm": [
+            0.1831,
+            0.5561,
+            0.4083,
+            0.5729
+          ],
+          "expected_text": "B. Emergency Action Plan."
+        },
+        {
+          "id": "sec2_c",
+          "bbox_norm": [
+            0.1831,
+            0.5733,
+            0.3964,
+            0.5903
+          ],
+          "expected_text": "C. Tasks to be performed."
+        },
+        {
+          "id": "sec2_d",
+          "bbox_norm": [
+            0.1831,
+            0.5913,
+            0.6228,
+            0.6083
+          ],
+          "expected_text": "D. Methods used to determine successful performance."
+        },
+        {
+          "id": "sec3_a",
+          "bbox_norm": [
+            0.1847,
+            0.6821,
+            0.8205,
+            0.6989
+          ],
+          "expected_text": "A. Safety precautions were reemphasized immediately prior to job performance."
+        },
+        {
+          "id": "sec3_b",
+          "bbox_norm": [
+            0.1847,
+            0.6985,
+            0.8206,
+            0.7153
+          ],
+          "expected_text": "B. The instructor evaluated my knowledge of precautions prior to job"
+        },
+        {
+          "id": "sec3_c",
+          "bbox_norm": [
+            0.1831,
+            0.7323,
+            0.5219,
+            0.7491
+          ],
+          "expected_text": "C. Laboratory/equipment was safe for use."
+        },
+        {
+          "id": "sec4_a",
+          "bbox_norm": [
+            0.1868,
+            0.8038,
+            0.6661,
+            0.8208
+          ],
+          "expected_text": "A. Encouraged me to report unsafe or unhealthy conditions."
+        },
+        {
+          "id": "sec4_b",
+          "bbox_norm": [
+            0.1868,
+            0.8218,
+            0.459,
+            0.8388
+          ],
+          "expected_text": "B. Encouraged me to do my best."
+        },
+        {
+          "id": "sec4_c",
+          "bbox_norm": [
+            0.1868,
+            0.8401,
+            0.7299,
+            0.8571
+          ],
+          "expected_text": "C. Provided a learning environment that was not threatening to me."
+        }
       ],
       "fields": [
-        { "id": "header.course", "type": "printed", "bbox_norm": [0.1926, 0.2145, 0.4882, 0.254], "tesseract_psm": 7, "value_type": "text" },
-        { "id": "header.date", "type": "handwriting", "bbox_norm": [0.5499, 0.2145, 0.6723, 0.254], "value_type": "date", "max_new_tokens": 16 },
-        { "id": "header.cin", "type": "printed", "bbox_norm": [0.7313, 0.2145, 0.9069, 0.254], "tesseract_psm": 7, "value_type": "text" },
-
-        { "id": "header.unit", "type": "printed", "bbox_norm": [0.1718, 0.2398, 0.3617, 0.2793], "tesseract_psm": 7, "value_type": "text" },
-        { "id": "header.division", "type": "printed", "bbox_norm": [0.4546, 0.2398, 0.9069, 0.2793], "tesseract_psm": 7, "value_type": "text" },
-        { "id": "header.instructors", "type": "handwriting", "bbox_norm": [0.2339, 0.2713, 0.9069, 0.3133], "value_type": "text", "max_new_tokens": 32 },
-
-        { "id": "sec1.a_rating", "type": "handwriting", "value_type": "rating_1_5", "left_of_anchor": { "anchor_id": "sec1_a", "width_norm": 0.095, "x_gap_norm": 0.012, "y_pad_norm": 0.01 }, "max_new_tokens": 8 },
-        { "id": "sec1.b_rating", "type": "handwriting", "value_type": "rating_1_5", "left_of_anchor": { "anchor_id": "sec1_b", "width_norm": 0.095, "x_gap_norm": 0.012, "y_pad_norm": 0.01 }, "max_new_tokens": 8 },
-
-        { "id": "sec2.a_yesno", "type": "handwriting", "value_type": "yes_no", "left_of_anchor": { "anchor_id": "sec2_a", "width_norm": 0.095, "x_gap_norm": 0.012, "y_pad_norm": 0.01 }, "max_new_tokens": 8 },
-        { "id": "sec2.b_yesno", "type": "handwriting", "value_type": "yes_no", "left_of_anchor": { "anchor_id": "sec2_b", "width_norm": 0.095, "x_gap_norm": 0.012, "y_pad_norm": 0.01 }, "max_new_tokens": 8 },
-        { "id": "sec2.c_yesno", "type": "handwriting", "value_type": "yes_no", "left_of_anchor": { "anchor_id": "sec2_c", "width_norm": 0.095, "x_gap_norm": 0.012, "y_pad_norm": 0.01 }, "max_new_tokens": 8 },
-        { "id": "sec2.d_yesno", "type": "handwriting", "value_type": "yes_no", "left_of_anchor": { "anchor_id": "sec2_d", "width_norm": 0.095, "x_gap_norm": 0.012, "y_pad_norm": 0.01 }, "max_new_tokens": 8 },
-
-        { "id": "sec3.a_yesno", "type": "handwriting", "value_type": "yes_no", "left_of_anchor": { "anchor_id": "sec3_a", "width_norm": 0.095, "x_gap_norm": 0.012, "y_pad_norm": 0.01 }, "max_new_tokens": 8 },
-        { "id": "sec3.b_yesno", "type": "handwriting", "value_type": "yes_no", "left_of_anchor": { "anchor_id": "sec3_b", "width_norm": 0.095, "x_gap_norm": 0.012, "y_pad_norm": 0.01 }, "max_new_tokens": 8 },
-        { "id": "sec3.c_yesno", "type": "handwriting", "value_type": "yes_no", "left_of_anchor": { "anchor_id": "sec3_c", "width_norm": 0.095, "x_gap_norm": 0.012, "y_pad_norm": 0.01 }, "max_new_tokens": 8 },
-
-        { "id": "sec4.a_yesno", "type": "handwriting", "value_type": "yes_no", "left_of_anchor": { "anchor_id": "sec4_a", "width_norm": 0.095, "x_gap_norm": 0.012, "y_pad_norm": 0.01 }, "max_new_tokens": 8 },
-        { "id": "sec4.b_yesno", "type": "handwriting", "value_type": "yes_no", "left_of_anchor": { "anchor_id": "sec4_b", "width_norm": 0.095, "x_gap_norm": 0.012, "y_pad_norm": 0.01 }, "max_new_tokens": 8 },
-        { "id": "sec4.c_yesno", "type": "handwriting", "value_type": "yes_no", "left_of_anchor": { "anchor_id": "sec4_c", "width_norm": 0.095, "x_gap_norm": 0.012, "y_pad_norm": 0.01 }, "max_new_tokens": 8 }
+        {
+          "id": "header.course",
+          "type": "printed",
+          "bbox_norm": [
+            0.1926,
+            0.2145,
+            0.4882,
+            0.254
+          ],
+          "tesseract_psm": 7,
+          "value_type": "text"
+        },
+        {
+          "id": "header.date",
+          "type": "handwriting",
+          "bbox_norm": [
+            0.5499,
+            0.2145,
+            0.6723,
+            0.254
+          ],
+          "value_type": "date",
+          "max_new_tokens": 16
+        },
+        {
+          "id": "header.cin",
+          "type": "printed",
+          "bbox_norm": [
+            0.7313,
+            0.2145,
+            0.9069,
+            0.254
+          ],
+          "tesseract_psm": 7,
+          "value_type": "text"
+        },
+        {
+          "id": "header.unit",
+          "type": "printed",
+          "bbox_norm": [
+            0.1718,
+            0.2398,
+            0.3617,
+            0.2793
+          ],
+          "tesseract_psm": 7,
+          "value_type": "text"
+        },
+        {
+          "id": "header.division",
+          "type": "printed",
+          "bbox_norm": [
+            0.4546,
+            0.2398,
+            0.9069,
+            0.2793
+          ],
+          "tesseract_psm": 7,
+          "value_type": "text"
+        },
+        {
+          "id": "header.instructors",
+          "type": "handwriting",
+          "bbox_norm": [
+            0.2339,
+            0.2713,
+            0.9069,
+            0.3133
+          ],
+          "value_type": "text",
+          "max_new_tokens": 32
+        },
+        {
+          "id": "sec1.a_rating",
+          "type": "handwriting",
+          "value_type": "rating_1_5",
+          "left_of_anchor": {
+            "anchor_id": "sec1_a",
+            "width_norm": 0.095,
+            "x_gap_norm": 0.012,
+            "y_pad_norm": 0.01
+          },
+          "max_new_tokens": 8
+        },
+        {
+          "id": "sec1.b_rating",
+          "type": "handwriting",
+          "value_type": "rating_1_5",
+          "left_of_anchor": {
+            "anchor_id": "sec1_b",
+            "width_norm": 0.095,
+            "x_gap_norm": 0.012,
+            "y_pad_norm": 0.01
+          },
+          "max_new_tokens": 8
+        },
+        {
+          "id": "sec2.a_yesno",
+          "type": "handwriting",
+          "value_type": "yes_no",
+          "left_of_anchor": {
+            "anchor_id": "sec2_a",
+            "width_norm": 0.095,
+            "x_gap_norm": 0.012,
+            "y_pad_norm": 0.01
+          },
+          "max_new_tokens": 8
+        },
+        {
+          "id": "sec2.b_yesno",
+          "type": "handwriting",
+          "value_type": "yes_no",
+          "left_of_anchor": {
+            "anchor_id": "sec2_b",
+            "width_norm": 0.095,
+            "x_gap_norm": 0.012,
+            "y_pad_norm": 0.01
+          },
+          "max_new_tokens": 8
+        },
+        {
+          "id": "sec2.c_yesno",
+          "type": "handwriting",
+          "value_type": "yes_no",
+          "left_of_anchor": {
+            "anchor_id": "sec2_c",
+            "width_norm": 0.095,
+            "x_gap_norm": 0.012,
+            "y_pad_norm": 0.01
+          },
+          "max_new_tokens": 8
+        },
+        {
+          "id": "sec2.d_yesno",
+          "type": "handwriting",
+          "value_type": "yes_no",
+          "left_of_anchor": {
+            "anchor_id": "sec2_d",
+            "width_norm": 0.095,
+            "x_gap_norm": 0.012,
+            "y_pad_norm": 0.01
+          },
+          "max_new_tokens": 8
+        },
+        {
+          "id": "sec3.a_yesno",
+          "type": "handwriting",
+          "value_type": "yes_no",
+          "left_of_anchor": {
+            "anchor_id": "sec3_a",
+            "width_norm": 0.095,
+            "x_gap_norm": 0.012,
+            "y_pad_norm": 0.01
+          },
+          "max_new_tokens": 8
+        },
+        {
+          "id": "sec3.b_yesno",
+          "type": "handwriting",
+          "value_type": "yes_no",
+          "left_of_anchor": {
+            "anchor_id": "sec3_b",
+            "width_norm": 0.095,
+            "x_gap_norm": 0.012,
+            "y_pad_norm": 0.01
+          },
+          "max_new_tokens": 8
+        },
+        {
+          "id": "sec3.c_yesno",
+          "type": "handwriting",
+          "value_type": "yes_no",
+          "left_of_anchor": {
+            "anchor_id": "sec3_c",
+            "width_norm": 0.095,
+            "x_gap_norm": 0.012,
+            "y_pad_norm": 0.01
+          },
+          "max_new_tokens": 8
+        },
+        {
+          "id": "sec4.a_yesno",
+          "type": "handwriting",
+          "value_type": "yes_no",
+          "left_of_anchor": {
+            "anchor_id": "sec4_a",
+            "width_norm": 0.095,
+            "x_gap_norm": 0.012,
+            "y_pad_norm": 0.01
+          },
+          "max_new_tokens": 8
+        },
+        {
+          "id": "sec4.b_yesno",
+          "type": "handwriting",
+          "value_type": "yes_no",
+          "left_of_anchor": {
+            "anchor_id": "sec4_b",
+            "width_norm": 0.095,
+            "x_gap_norm": 0.012,
+            "y_pad_norm": 0.01
+          },
+          "max_new_tokens": 8
+        },
+        {
+          "id": "sec4.c_yesno",
+          "type": "handwriting",
+          "value_type": "yes_no",
+          "left_of_anchor": {
+            "anchor_id": "sec4_c",
+            "width_norm": 0.095,
+            "x_gap_norm": 0.012,
+            "y_pad_norm": 0.01
+          },
+          "max_new_tokens": 8
+        }
       ]
     },
     {
       "page_index": 1,
       "anchors": [
-        { "id": "hdr_training", "bbox_norm": [0.1136, 0.0626, 0.2599, 0.0794], "expected_text": "1. TRAINING:" },
-        { "id": "q1a", "bbox_norm": [0.1729, 0.0992, 0.8695, 0.1321], "expected_text": "Did the classroom instruction prepare you" },
-        { "id": "q1b", "bbox_norm": [0.1729, 0.2401, 0.8956, 0.2687], "expected_text": "Were the swim videos" },
-
-        { "id": "hdr_facilities", "bbox_norm": [0.1136, 0.3439, 0.2832, 0.3607], "expected_text": "2. FACILITIES:" },
-        { "id": "q2a", "bbox_norm": [0.1602, 0.3764, 0.8577, 0.4048], "expected_text": "Were there any health or safety issues" },
-        { "id": "q2b", "bbox_norm": [0.1602, 0.4803, 0.8177, 0.4958], "expected_text": "What recommendations" },
-
-        { "id": "hdr_instructors", "bbox_norm": [0.1201, 0.5792, 0.2906, 0.5959], "expected_text": "3. INSTRUCTORS:" },
-        { "id": "q3a", "bbox_norm": [0.1463, 0.6106, 0.812, 0.6247], "expected_text": "Were the instructors professional" },
-        { "id": "q3b", "bbox_norm": [0.1463, 0.7015, 0.8165, 0.7284], "expected_text": "Were the instructions presented" },
-
-        { "id": "hdr_recruit_feedback", "bbox_norm": [0.1201, 0.8116, 0.3494, 0.8283], "expected_text": "4. RECRUIT FEEDBACK:" },
-        { "id": "q4a", "bbox_norm": [0.1733, 0.8296, 0.7938, 0.8553], "expected_text": "What can Water Survival Division do better" }
+        {
+          "id": "hdr_training",
+          "bbox_norm": [
+            0.1136,
+            0.0626,
+            0.2599,
+            0.0794
+          ],
+          "expected_text": "1. TRAINING:"
+        },
+        {
+          "id": "q1a",
+          "bbox_norm": [
+            0.1729,
+            0.0992,
+            0.8695,
+            0.1321
+          ],
+          "expected_text": "Did the classroom instruction prepare you"
+        },
+        {
+          "id": "q1b",
+          "bbox_norm": [
+            0.1729,
+            0.2401,
+            0.8956,
+            0.2687
+          ],
+          "expected_text": "Were the swim videos"
+        },
+        {
+          "id": "hdr_facilities",
+          "bbox_norm": [
+            0.1136,
+            0.3439,
+            0.2832,
+            0.3607
+          ],
+          "expected_text": "2. FACILITIES:"
+        },
+        {
+          "id": "q2a",
+          "bbox_norm": [
+            0.1602,
+            0.3764,
+            0.8577,
+            0.4048
+          ],
+          "expected_text": "Were there any health or safety issues"
+        },
+        {
+          "id": "q2b",
+          "bbox_norm": [
+            0.1602,
+            0.4803,
+            0.8177,
+            0.4958
+          ],
+          "expected_text": "What recommendations"
+        },
+        {
+          "id": "hdr_instructors",
+          "bbox_norm": [
+            0.1201,
+            0.5792,
+            0.2906,
+            0.5959
+          ],
+          "expected_text": "3. INSTRUCTORS:"
+        },
+        {
+          "id": "q3a",
+          "bbox_norm": [
+            0.1463,
+            0.6106,
+            0.812,
+            0.6247
+          ],
+          "expected_text": "Were the instructors professional"
+        },
+        {
+          "id": "q3b",
+          "bbox_norm": [
+            0.1463,
+            0.7015,
+            0.8165,
+            0.7284
+          ],
+          "expected_text": "Were the instructions presented"
+        },
+        {
+          "id": "hdr_recruit_feedback",
+          "bbox_norm": [
+            0.1201,
+            0.8116,
+            0.3494,
+            0.8283
+          ],
+          "expected_text": "4. RECRUIT FEEDBACK:"
+        },
+        {
+          "id": "q4a",
+          "bbox_norm": [
+            0.1733,
+            0.8296,
+            0.7938,
+            0.8553
+          ],
+          "expected_text": "What can Water Survival Division do better"
+        }
       ],
       "fields": [
-        { "id": "training.a_response", "type": "handwriting", "value_type": "free_text", "ruled_lines_below_anchor": { "anchor_id": "q1a", "min_y_offset_norm": 0.035, "max_y_search_norm": 0.23, "min_line_length_norm": 0.45, "max_lines": 2, "x0_norm": 0.2, "x1_norm": 0.86 }, "max_new_tokens": 128 },
-        { "id": "training.b_response", "type": "handwriting", "value_type": "free_text", "ruled_lines_below_anchor": { "anchor_id": "q1b", "min_y_offset_norm": 0.03, "max_y_search_norm": 0.2, "min_line_length_norm": 0.45, "max_lines": 2, "x0_norm": 0.2, "x1_norm": 0.86 }, "max_new_tokens": 128 },
-
-        { "id": "facilities.a_response", "type": "handwriting", "value_type": "free_text", "ruled_lines_below_anchor": { "anchor_id": "q2a", "min_y_offset_norm": 0.03, "max_y_search_norm": 0.2, "min_line_length_norm": 0.45, "max_lines": 2, "x0_norm": 0.2, "x1_norm": 0.86 }, "max_new_tokens": 128 },
-        { "id": "facilities.b_response", "type": "handwriting", "value_type": "free_text", "ruled_lines_below_anchor": { "anchor_id": "q2b", "min_y_offset_norm": 0.03, "max_y_search_norm": 0.2, "min_line_length_norm": 0.45, "max_lines": 2, "x0_norm": 0.2, "x1_norm": 0.86 }, "max_new_tokens": 128 },
-
-        { "id": "instructors.a_response", "type": "handwriting", "value_type": "free_text", "ruled_lines_below_anchor": { "anchor_id": "q3a", "min_y_offset_norm": 0.03, "max_y_search_norm": 0.18, "min_line_length_norm": 0.45, "max_lines": 2, "x0_norm": 0.2, "x1_norm": 0.86 }, "max_new_tokens": 128 },
-        { "id": "instructors.b_response", "type": "handwriting", "value_type": "free_text", "ruled_lines_below_anchor": { "anchor_id": "q3b", "min_y_offset_norm": 0.03, "max_y_search_norm": 0.18, "min_line_length_norm": 0.45, "max_lines": 2, "x0_norm": 0.2, "x1_norm": 0.86 }, "max_new_tokens": 128 },
-
-        { "id": "recruit_feedback.a_response", "type": "handwriting", "value_type": "free_text", "ruled_lines_below_anchor": { "anchor_id": "q4a", "min_y_offset_norm": 0.03, "max_y_search_norm": 0.16, "min_line_length_norm": 0.45, "max_lines": 2, "x0_norm": 0.2, "x1_norm": 0.86 }, "max_new_tokens": 128 }
+        {
+          "id": "training.a_response",
+          "type": "handwriting",
+          "value_type": "free_text",
+          "ruled_lines_below_anchor": {
+            "anchor_id": "q1a",
+            "min_y_offset_norm": 0.035,
+            "max_y_search_norm": 0.23,
+            "min_line_length_norm": 0.45,
+            "max_lines": 2,
+            "x0_norm": 0.2,
+            "x1_norm": 0.86
+          },
+          "max_new_tokens": 128,
+          "scan_line_above_pad_px": 82,
+          "scan_line_below_pad_px": 28,
+          "scan_line_x_expand_px": 10,
+          "yproj_min_band_h": 38,
+          "pad_px": 8
+        },
+        {
+          "id": "training.b_response",
+          "type": "handwriting",
+          "value_type": "free_text",
+          "ruled_lines_below_anchor": {
+            "anchor_id": "q1b",
+            "min_y_offset_norm": 0.03,
+            "max_y_search_norm": 0.2,
+            "min_line_length_norm": 0.45,
+            "max_lines": 2,
+            "x0_norm": 0.2,
+            "x1_norm": 0.86
+          },
+          "max_new_tokens": 128,
+          "scan_line_above_pad_px": 82,
+          "scan_line_below_pad_px": 28,
+          "scan_line_x_expand_px": 10,
+          "yproj_min_band_h": 38,
+          "pad_px": 8
+        },
+        {
+          "id": "facilities.a_response",
+          "type": "handwriting",
+          "value_type": "free_text",
+          "ruled_lines_below_anchor": {
+            "anchor_id": "q2a",
+            "min_y_offset_norm": 0.03,
+            "max_y_search_norm": 0.2,
+            "min_line_length_norm": 0.45,
+            "max_lines": 2,
+            "x0_norm": 0.2,
+            "x1_norm": 0.86
+          },
+          "max_new_tokens": 128,
+          "scan_line_above_pad_px": 82,
+          "scan_line_below_pad_px": 28,
+          "scan_line_x_expand_px": 10,
+          "yproj_min_band_h": 38,
+          "pad_px": 8
+        },
+        {
+          "id": "facilities.b_response",
+          "type": "handwriting",
+          "value_type": "free_text",
+          "ruled_lines_below_anchor": {
+            "anchor_id": "q2b",
+            "min_y_offset_norm": 0.03,
+            "max_y_search_norm": 0.2,
+            "min_line_length_norm": 0.45,
+            "max_lines": 2,
+            "x0_norm": 0.2,
+            "x1_norm": 0.86
+          },
+          "max_new_tokens": 128,
+          "scan_line_above_pad_px": 82,
+          "scan_line_below_pad_px": 28,
+          "scan_line_x_expand_px": 10,
+          "yproj_min_band_h": 38,
+          "pad_px": 8
+        },
+        {
+          "id": "instructors.a_response",
+          "type": "handwriting",
+          "value_type": "free_text",
+          "ruled_lines_below_anchor": {
+            "anchor_id": "q3a",
+            "min_y_offset_norm": 0.03,
+            "max_y_search_norm": 0.18,
+            "min_line_length_norm": 0.45,
+            "max_lines": 2,
+            "x0_norm": 0.2,
+            "x1_norm": 0.86
+          },
+          "max_new_tokens": 128,
+          "scan_line_above_pad_px": 82,
+          "scan_line_below_pad_px": 28,
+          "scan_line_x_expand_px": 10,
+          "yproj_min_band_h": 38,
+          "pad_px": 8
+        },
+        {
+          "id": "instructors.b_response",
+          "type": "handwriting",
+          "value_type": "free_text",
+          "ruled_lines_below_anchor": {
+            "anchor_id": "q3b",
+            "min_y_offset_norm": 0.03,
+            "max_y_search_norm": 0.18,
+            "min_line_length_norm": 0.45,
+            "max_lines": 2,
+            "x0_norm": 0.2,
+            "x1_norm": 0.86
+          },
+          "max_new_tokens": 128,
+          "scan_line_above_pad_px": 82,
+          "scan_line_below_pad_px": 28,
+          "scan_line_x_expand_px": 10,
+          "yproj_min_band_h": 38,
+          "pad_px": 8
+        },
+        {
+          "id": "recruit_feedback.a_response",
+          "type": "handwriting",
+          "value_type": "free_text",
+          "ruled_lines_below_anchor": {
+            "anchor_id": "q4a",
+            "min_y_offset_norm": 0.03,
+            "max_y_search_norm": 0.16,
+            "min_line_length_norm": 0.45,
+            "max_lines": 2,
+            "x0_norm": 0.2,
+            "x1_norm": 0.86
+          },
+          "max_new_tokens": 128,
+          "scan_line_above_pad_px": 82,
+          "scan_line_below_pad_px": 28,
+          "scan_line_x_expand_px": 10,
+          "yproj_min_band_h": 38,
+          "pad_px": 8
+        }
       ]
     }
   ]

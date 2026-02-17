@@ -21,7 +21,7 @@ FIELD_PAD_PX = 6
 ENABLE_SCAN_LINE_REFINE = True
 ENABLE_YPROJ_TIGHTEN    = True
 ENABLE_COMPONENT_TIGHTEN= True
-EMPTY_INK_THRESH        = 0.0005   # raise if you see false positives; lower if pencil is faint
+EMPTY_INK_THRESH        = 0.00035   # slightly lower to keep faint handwriting strokes
 
 # ---- 5) DEBUG ----
 DEBUG_SAVE = True
@@ -56,6 +56,13 @@ print(f"Run: {run_id}")
 print(f"Device: {device}")
 print(f"PDFs found: {len(pdfs)}")
 print(f"Output dir: {run_out_dir}")
+print(
+    "Crop refine toggles: "
+    f"scan_line={ENABLE_SCAN_LINE_REFINE}, "
+    f"yproj={ENABLE_YPROJ_TIGHTEN}, "
+    f"components={ENABLE_COMPONENT_TIGHTEN}, "
+    f"empty_ink_thresh={EMPTY_INK_THRESH}"
+)
 if debug_dir:
     print(f"Debug dir: {debug_dir}")
 

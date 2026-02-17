@@ -284,6 +284,19 @@ def normalize_for_ocr(gray: np.ndarray) -> np.ndarray:
     g = cv2.bilateralFilter(g, d=7, sigmaColor=50, sigmaSpace=50)
     return g
 
+def suppress_border_noise(gray: np.ndarray, border_frac: float = 0.03) -> np.ndarray:
+    """
+    Suppress dark border artifacts/stains near page edges that can destabilize global alignment.
+    """
+    H, W = gray.shape[:2]
+    b = max(8, int(min(H, W) * border_frac))
+    mask = np.zeros((H, W), dtype=np.uint8)
+    cv2.rectangle(mask, (b, b), (W - b, H - b), 255, -1)
+    med = int(np.median(gray))
+    out = gray.copy()
+    out[mask == 0] = med
+    return out
+
 def binarize_inv(gray: np.ndarray) -> np.ndarray:
     g = normalize_for_ocr(gray)
     bw = cv2.adaptiveThreshold(g, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
@@ -354,10 +367,10 @@ def _phase_corr_shift(a: np.ndarray, b: np.ndarray) -> Tuple[float, float, float
     (dx, dy), resp = cv2.phaseCorrelate(a32, b32)
     return float(dx), float(dy), float(resp)
 
-def local_align_scan_crop_to_template(scan_gray: np.ndarray, templ_gray: np.ndarray) -> Tuple[np.ndarray, Dict[str, Any]]:
+def local_align_scan_crop_to_template(scan_gray: np.ndarray, templ_gray: np.ndarray) -> Tuple[np.ndarray, np.ndarray, Dict[str, Any]]:
     """
     Align scan_gray to templ_gray using translation ECC with phase-correlation init.
-    Returns aligned_scan_gray (same size as templ_gray) and diagnostics.
+    Returns aligned_scan_gray (same size as templ_gray), the 2x3 warp matrix, and diagnostics.
     """
     # work on edges to reduce sensitivity to brightness
     sg = normalize_for_ocr(scan_gray)
@@ -385,7 +398,7 @@ def local_align_scan_crop_to_template(scan_gray: np.ndarray, templ_gray: np.ndar
         scan_gray, warp, (templ_gray.shape[1], templ_gray.shape[0]),
         flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE
     )
-    return aligned, diag
+    return aligned, warp, diag
 
 def warp_rgb_by_affine(rgb: np.ndarray, warp2x3: np.ndarray, out_w: int, out_h: int) -> np.ndarray:
     return cv2.warpAffine(rgb, warp2x3, (out_w, out_h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
@@ -507,15 +520,9 @@ def extract_ink_only(scan_rgb_crop: np.ndarray, templ_rgb_crop: np.ndarray) -> T
     tg0 = cv2.cvtColor(templ_rgb_crop, cv2.COLOR_RGB2GRAY)
 
     # local align scan->template
-    aligned_sg, al_diag = local_align_scan_crop_to_template(sg0, tg0)
+    aligned_sg, warp, al_diag = local_align_scan_crop_to_template(sg0, tg0)
 
-    # align rgb similarly using same affine from ECC? We don't have warp matrix returned.
-    # We approximate by re-running alignment on gray to retrieve warp via ECC internals is complex.
-    # Instead: re-warp by phase shift only (good enough) using al_diag dx/dy.
-    dx = al_diag.get("phase_dx", 0.0)
-    dy = al_diag.get("phase_dy", 0.0)
-    warp = np.array([[1, 0, dx],
-                     [0, 1, dy]], dtype=np.float32)
+    # align RGB with the same local warp used for grayscale alignment
     aligned_rgb = cv2.warpAffine(scan_rgb_crop, warp, (templ_rgb_crop.shape[1], templ_rgb_crop.shape[0]),
                                  flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
 
@@ -749,8 +756,8 @@ def _scale_H(H: np.ndarray, s_scan: float, s_templ: float) -> np.ndarray:
     return np.linalg.inv(T_t) @ H @ T_s
 
 def estimate_homography_orb(scan_gray: np.ndarray, templ_gray: np.ndarray) -> Tuple[Optional[np.ndarray], Dict[str, Any]]:
-    scan_g = normalize_for_ocr(scan_gray)
-    templ_g = normalize_for_ocr(templ_gray)
+    scan_g = suppress_border_noise(normalize_for_ocr(scan_gray))
+    templ_g = suppress_border_noise(normalize_for_ocr(templ_gray))
 
     scan_d, s_scan = downscale_max(scan_g, max_dim=1600)
     templ_d, s_templ = downscale_max(templ_g, max_dim=1600)
@@ -784,8 +791,8 @@ def estimate_homography_orb(scan_gray: np.ndarray, templ_gray: np.ndarray) -> Tu
     return H_full, {"method": "orb", "matches": int(len(matches)), "inliers": int(inliers)}
 
 def estimate_affine_ecc(scan_gray: np.ndarray, templ_gray: np.ndarray) -> Tuple[Optional[np.ndarray], Dict[str, Any]]:
-    scan_g = normalize_for_ocr(scan_gray)
-    templ_g = normalize_for_ocr(templ_gray)
+    scan_g = suppress_border_noise(normalize_for_ocr(scan_gray))
+    templ_g = suppress_border_noise(normalize_for_ocr(templ_gray))
 
     scan_d, s_scan = downscale_max(scan_g, max_dim=1400)
     templ_d, s_templ = downscale_max(templ_g, max_dim=1400)
@@ -849,6 +856,20 @@ def resolve_field_bbox_px(field: Dict[str, Any], page_W: int, page_H: int, ancho
         x1n = below.get("x1_norm", None)
         x0 = ax0 if x0n is None else int(round(x0n * page_W))
         x1 = ax1 if x1n is None else int(round(x1n * page_W))
+
+        return clamp_box([x0, y0, x1, y1], page_W, page_H)
+
+    ruled = field.get("ruled_lines_below_anchor")
+    if ruled:
+        aid = ruled["anchor_id"]
+        if aid not in anchors_px:
+            return [0, 0, page_W, page_H]
+
+        ax0, ay0, ax1, ay1 = anchors_px[aid]
+        y0 = int(round(ay1 + ruled.get("min_y_offset_norm", 0.02) * page_H))
+        y1 = int(round(ay1 + ruled.get("max_y_search_norm", 0.18) * page_H))
+        x0 = int(round(ruled.get("x0_norm", ax0 / max(1, page_W)) * page_W))
+        x1 = int(round(ruled.get("x1_norm", ax1 / max(1, page_W)) * page_W))
 
         return clamp_box([x0, y0, x1, y1], page_W, page_H)
 
