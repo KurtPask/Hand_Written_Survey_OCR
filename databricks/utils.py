@@ -344,6 +344,10 @@ def crop_gray(gray: np.ndarray, box: List[int], pad: int = 0) -> np.ndarray:
     x1 = min(W, x1 + pad); y1 = min(H, y1 + pad)
     return gray[y0:y1, x0:x1].copy()
 
+def shift_box(box: List[int], dx: int, dy: int, W: int, H: int) -> List[int]:
+    x0, y0, x1, y1 = box
+    return clamp_box([x0 + dx, y0 + dy, x1 + dx, y1 + dy], W, H)
+
 def upscale_for_small_ocr(rgb: np.ndarray, min_side: int = 80) -> np.ndarray:
     h, w = rgb.shape[:2]
     if min(h, w) >= min_side:
@@ -957,6 +961,65 @@ def refine_ruled_box_using_scan_lines(
     diag["refined_box_xyxy"] = refined
     return refined, diag
 
+def refine_box_by_template_match(
+    scan_gray: np.ndarray,
+    templ_gray: np.ndarray,
+    init_box_xyxy: List[int],
+    search_px: int = 80,
+    min_score: float = 0.18,
+) -> Tuple[List[int], Dict[str, Any]]:
+    """
+    Refine a box by matching the template patch inside a local search window on the warped scan.
+    Helps compensate for local residual offsets (e.g., left/down drift) after global alignment.
+    """
+    H, W = scan_gray.shape[:2]
+    box = clamp_box(init_box_xyxy, W, H)
+    x0, y0, x1, y1 = box
+
+    templ_patch = crop_gray(templ_gray, box, pad=0)
+    if templ_patch.size == 0:
+        return box, {"ok": False, "reason": "empty_template_patch"}
+
+    sx0 = max(0, x0 - search_px)
+    sy0 = max(0, y0 - search_px)
+    sx1 = min(W, x1 + search_px)
+    sy1 = min(H, y1 + search_px)
+    scan_search = scan_gray[sy0:sy1, sx0:sx1]
+
+    th, tw = templ_patch.shape[:2]
+    sh, sw = scan_search.shape[:2]
+    if sh < th or sw < tw:
+        return box, {"ok": False, "reason": "search_smaller_than_template"}
+
+    tp = cv2.Canny(normalize_for_ocr(templ_patch), 60, 140)
+    sp = cv2.Canny(normalize_for_ocr(scan_search), 60, 140)
+
+    try:
+        res = cv2.matchTemplate(sp, tp, cv2.TM_CCOEFF_NORMED)
+        _, max_val, _, max_loc = cv2.minMaxLoc(res)
+    except Exception as e:
+        return box, {"ok": False, "reason": f"match_error:{e}"}
+
+    new_x0 = sx0 + int(max_loc[0])
+    new_y0 = sy0 + int(max_loc[1])
+    dx = int(new_x0 - x0)
+    dy = int(new_y0 - y0)
+
+    diag = {
+        "ok": bool(max_val >= min_score),
+        "score": float(max_val),
+        "dx": dx,
+        "dy": dy,
+        "search_px": int(search_px),
+        "min_score": float(min_score),
+    }
+    if max_val < min_score:
+        return box, diag
+
+    refined = shift_box(box, dx, dy, W, H)
+    diag["refined_box_xyxy"] = refined
+    return refined, diag
+
 
 # -------------------------
 # Value normalization
@@ -1042,6 +1105,9 @@ def ocr_pdf_with_form_config(
     enable_scan_line_refine: bool = True,
     enable_yproj_tighten: bool = True,
     enable_component_tighten: bool = True,
+    enable_local_template_match_refine: bool = True,
+    local_match_search_px: int = 90,
+    local_match_min_score: float = 0.20,
     empty_ink_thresh: float = 0.0005,  # if ink coverage under this => treat as blank
 
     debug_dir: Optional[str] = None,
@@ -1154,6 +1220,19 @@ def ocr_pdf_with_form_config(
 
             # Step A: if field is free-text or handwriting, tighten using scan-detected lines (works even when subtraction fails)
             refined_box = init_box
+            # Step A0: local template match refinement (captures residual local drift on bad scans)
+            if enable_local_template_match_refine:
+                match_search_px = int(f.get("local_match_search_px", local_match_search_px))
+                match_min_score = float(f.get("local_match_min_score", local_match_min_score))
+                refined_box, diag0 = refine_box_by_template_match(
+                    scan_gray=warped_gray,
+                    templ_gray=templ_gray,
+                    init_box_xyxy=refined_box,
+                    search_px=match_search_px,
+                    min_score=match_min_score,
+                )
+                refine_steps.append({"local_template_match_refine": diag0})
+
             if enable_scan_line_refine and value_type == "free_text":
                 max_lines = int(f.get("scan_line_max_lines", 1))
                 above_pad = int(f.get("scan_line_above_pad_px", 70))

@@ -525,11 +525,13 @@
             "x1_norm": 0.86
           },
           "max_new_tokens": 128,
-          "scan_line_above_pad_px": 82,
-          "scan_line_below_pad_px": 28,
-          "scan_line_x_expand_px": 10,
-          "yproj_min_band_h": 38,
-          "pad_px": 8
+          "scan_line_above_pad_px": 88,
+          "scan_line_below_pad_px": 24,
+          "scan_line_x_expand_px": 8,
+          "yproj_min_band_h": 34,
+          "pad_px": 8,
+          "local_match_search_px": 110,
+          "local_match_min_score": 0.16
         },
         {
           "id": "training.b_response",
@@ -545,11 +547,13 @@
             "x1_norm": 0.86
           },
           "max_new_tokens": 128,
-          "scan_line_above_pad_px": 82,
-          "scan_line_below_pad_px": 28,
-          "scan_line_x_expand_px": 10,
-          "yproj_min_band_h": 38,
-          "pad_px": 8
+          "scan_line_above_pad_px": 88,
+          "scan_line_below_pad_px": 24,
+          "scan_line_x_expand_px": 8,
+          "yproj_min_band_h": 34,
+          "pad_px": 8,
+          "local_match_search_px": 110,
+          "local_match_min_score": 0.16
         },
         {
           "id": "facilities.a_response",
@@ -565,11 +569,13 @@
             "x1_norm": 0.86
           },
           "max_new_tokens": 128,
-          "scan_line_above_pad_px": 82,
-          "scan_line_below_pad_px": 28,
-          "scan_line_x_expand_px": 10,
-          "yproj_min_band_h": 38,
-          "pad_px": 8
+          "scan_line_above_pad_px": 88,
+          "scan_line_below_pad_px": 24,
+          "scan_line_x_expand_px": 8,
+          "yproj_min_band_h": 34,
+          "pad_px": 8,
+          "local_match_search_px": 110,
+          "local_match_min_score": 0.16
         },
         {
           "id": "facilities.b_response",
@@ -585,11 +591,13 @@
             "x1_norm": 0.86
           },
           "max_new_tokens": 128,
-          "scan_line_above_pad_px": 82,
-          "scan_line_below_pad_px": 28,
-          "scan_line_x_expand_px": 10,
-          "yproj_min_band_h": 38,
-          "pad_px": 8
+          "scan_line_above_pad_px": 88,
+          "scan_line_below_pad_px": 24,
+          "scan_line_x_expand_px": 8,
+          "yproj_min_band_h": 34,
+          "pad_px": 8,
+          "local_match_search_px": 110,
+          "local_match_min_score": 0.16
         },
         {
           "id": "instructors.a_response",
@@ -605,11 +613,13 @@
             "x1_norm": 0.86
           },
           "max_new_tokens": 128,
-          "scan_line_above_pad_px": 82,
-          "scan_line_below_pad_px": 28,
-          "scan_line_x_expand_px": 10,
-          "yproj_min_band_h": 38,
-          "pad_px": 8
+          "scan_line_above_pad_px": 88,
+          "scan_line_below_pad_px": 24,
+          "scan_line_x_expand_px": 8,
+          "yproj_min_band_h": 34,
+          "pad_px": 8,
+          "local_match_search_px": 110,
+          "local_match_min_score": 0.16
         },
         {
           "id": "instructors.b_response",
@@ -625,11 +635,13 @@
             "x1_norm": 0.86
           },
           "max_new_tokens": 128,
-          "scan_line_above_pad_px": 82,
-          "scan_line_below_pad_px": 28,
-          "scan_line_x_expand_px": 10,
-          "yproj_min_band_h": 38,
-          "pad_px": 8
+          "scan_line_above_pad_px": 88,
+          "scan_line_below_pad_px": 24,
+          "scan_line_x_expand_px": 8,
+          "yproj_min_band_h": 34,
+          "pad_px": 8,
+          "local_match_search_px": 110,
+          "local_match_min_score": 0.16
         },
         {
           "id": "recruit_feedback.a_response",
@@ -645,11 +657,13 @@
             "x1_norm": 0.86
           },
           "max_new_tokens": 128,
-          "scan_line_above_pad_px": 82,
-          "scan_line_below_pad_px": 28,
-          "scan_line_x_expand_px": 10,
-          "yproj_min_band_h": 38,
-          "pad_px": 8
+          "scan_line_above_pad_px": 88,
+          "scan_line_below_pad_px": 24,
+          "scan_line_x_expand_px": 8,
+          "yproj_min_band_h": 34,
+          "pad_px": 8,
+          "local_match_search_px": 110,
+          "local_match_min_score": 0.16
         }
       ]
     }

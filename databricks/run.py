@@ -21,7 +21,10 @@ FIELD_PAD_PX = 6
 ENABLE_SCAN_LINE_REFINE = True
 ENABLE_YPROJ_TIGHTEN    = True
 ENABLE_COMPONENT_TIGHTEN= True
-EMPTY_INK_THRESH        = 0.00035   # slightly lower to keep faint handwriting strokes
+ENABLE_LOCAL_MATCH_REFINE = True
+LOCAL_MATCH_SEARCH_PX     = 90
+LOCAL_MATCH_MIN_SCORE     = 0.20
+EMPTY_INK_THRESH          = 0.00025   # retain faint pencil while still filtering near-empty fields
 
 # ---- 5) DEBUG ----
 DEBUG_SAVE = True
@@ -59,6 +62,9 @@ print(f"Output dir: {run_out_dir}")
 print(
     "Crop refine toggles: "
     f"scan_line={ENABLE_SCAN_LINE_REFINE}, "
+    f"local_match={ENABLE_LOCAL_MATCH_REFINE}, "
+    f"local_search_px={LOCAL_MATCH_SEARCH_PX}, "
+    f"local_min_score={LOCAL_MATCH_MIN_SCORE}, "
     f"yproj={ENABLE_YPROJ_TIGHTEN}, "
     f"components={ENABLE_COMPONENT_TIGHTEN}, "
     f"empty_ink_thresh={EMPTY_INK_THRESH}"
@@ -139,6 +145,9 @@ for i, pdf_path in enumerate(pdfs, start=1):
             enable_scan_line_refine=ENABLE_SCAN_LINE_REFINE,
             enable_yproj_tighten=ENABLE_YPROJ_TIGHTEN,
             enable_component_tighten=ENABLE_COMPONENT_TIGHTEN,
+            enable_local_template_match_refine=ENABLE_LOCAL_MATCH_REFINE,
+            local_match_search_px=LOCAL_MATCH_SEARCH_PX,
+            local_match_min_score=LOCAL_MATCH_MIN_SCORE,
             empty_ink_thresh=EMPTY_INK_THRESH,
 
             debug_dir=this_debug_dir,
