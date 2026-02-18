@@ -1095,6 +1095,110 @@ def refine_box_by_template_match(
     diag["refined_box_xyxy"] = refined
     return refined, diag
 
+def _collect_tesseract_word_boxes(
+    gray: np.ndarray,
+    psm: int,
+    min_conf: float = 20.0,
+) -> List[Tuple[int, int, int, int]]:
+    """
+    Collect confident word-level boxes from tesseract image_to_data.
+    Returns boxes in (x0, y0, x1, y1) image coordinates.
+    """
+    cfg = f"--oem 1 --psm {int(psm)}"
+    boxes: List[Tuple[int, int, int, int]] = []
+    try:
+        data = pytesseract.image_to_data(gray, output_type=pytesseract.Output.DICT, config=cfg)
+    except Exception:
+        return boxes
+
+    n = len(data.get("text", []))
+    for i in range(n):
+        txt = (data.get("text", [""] * n)[i] or "").strip()
+        if not txt:
+            continue
+        try:
+            conf = float(data.get("conf", ["-1"] * n)[i])
+        except Exception:
+            conf = -1.0
+        if conf < float(min_conf):
+            continue
+
+        x = int(data.get("left", [0] * n)[i])
+        y = int(data.get("top", [0] * n)[i])
+        w = int(data.get("width", [0] * n)[i])
+        h = int(data.get("height", [0] * n)[i])
+        if w <= 1 or h <= 1:
+            continue
+        boxes.append((x, y, x + w, y + h))
+
+    return boxes
+
+def refine_box_by_tesseract_detector(
+    scan_rgb: np.ndarray,
+    templ_rgb: np.ndarray,
+    init_box_xyxy: List[int],
+    page_W: int,
+    page_H: int,
+    pad_px: int = 6,
+    min_conf: float = 20.0,
+    min_union_area_px: int = 180,
+) -> Tuple[List[int], Dict[str, Any]]:
+    """
+    Model-driven text region refinement using tesseract detections on the
+    subtraction-derived ink crop. This helps align handwriting crops when
+    deterministic morphology drifts.
+    """
+    box = clamp_box(init_box_xyxy, page_W, page_H)
+    crop_scan = crop_px(scan_rgb, box, pad=pad_px)
+    crop_templ = crop_px(templ_rgb, box, pad=pad_px)
+
+    if crop_scan.size == 0 or crop_templ.size == 0:
+        return box, {"ok": False, "reason": "empty_crop"}
+
+    ink_rgb, _, _ = extract_ink_only(crop_scan, crop_templ)
+    ink_gray = cv2.cvtColor(ink_rgb, cv2.COLOR_RGB2GRAY)
+    ink_gray = remove_lines_inpaint(ink_gray)
+    ink_gray = normalize_for_ocr(ink_gray)
+
+    boxes = []
+    for psm in (6, 11):
+        boxes.extend(_collect_tesseract_word_boxes(ink_gray, psm=psm, min_conf=min_conf))
+
+    diag = {
+        "ok": False,
+        "detector": "tesseract_word_boxes",
+        "word_boxes_found": len(boxes),
+        "min_conf": float(min_conf),
+    }
+    if not boxes:
+        return box, diag
+
+    x0 = min(b[0] for b in boxes)
+    y0 = min(b[1] for b in boxes)
+    x1 = max(b[2] for b in boxes)
+    y1 = max(b[3] for b in boxes)
+
+    union_area = int(max(0, x1 - x0) * max(0, y1 - y0))
+    diag["union_area_px"] = union_area
+    if union_area < int(min_union_area_px):
+        diag["reason"] = "union_too_small"
+        return box, diag
+
+    x0 = max(0, x0 - 8)
+    y0 = max(0, y0 - 6)
+    x1 = min(crop_scan.shape[1], x1 + 8)
+    y1 = min(crop_scan.shape[0], y1 + 6)
+
+    bx0, by0, _, _ = box
+    ox = max(0, bx0 - pad_px)
+    oy = max(0, by0 - pad_px)
+
+    refined = clamp_box([ox + x0, oy + y0, ox + x1, oy + y1], page_W, page_H)
+
+    diag["ok"] = True
+    diag["refined_box_xyxy"] = refined
+    return refined, diag
+
 
 # -------------------------
 # Value normalization
@@ -1187,6 +1291,9 @@ def ocr_pdf_with_form_config(
     ink_delta_search_px: int = 36,
     ink_delta_step_px: int = 2,
     ink_delta_min_ratio: float = 0.010,
+    enable_tesseract_detector_refine: bool = True,
+    tesseract_detector_min_conf: float = 20.0,
+    tesseract_detector_min_union_area_px: int = 180,
     empty_ink_thresh: float = 0.0005,  # if ink coverage under this => treat as blank
 
     debug_dir: Optional[str] = None,
@@ -1312,7 +1419,7 @@ def ocr_pdf_with_form_config(
                 )
                 refine_steps.append({"local_template_match_refine": diag0})
 
-            if enable_ink_delta_refine and value_type in ("rating_1_5", "yes_no"):
+            if enable_ink_delta_refine and value_type in ("rating_1_5", "yes_no", "free_text", "text"):
                 delta_search_px = int(f.get("ink_delta_search_px", ink_delta_search_px))
                 delta_step_px = int(f.get("ink_delta_step_px", ink_delta_step_px))
                 delta_min_ratio = float(f.get("ink_delta_min_ratio", ink_delta_min_ratio))
@@ -1325,6 +1432,19 @@ def ocr_pdf_with_form_config(
                     min_ink_delta_ratio=delta_min_ratio,
                 )
                 refine_steps.append({"ink_delta_refine": diag0b})
+
+            if enable_tesseract_detector_refine and tess_ok and ftype == "handwriting":
+                refined_box, diag_tm = refine_box_by_tesseract_detector(
+                    scan_rgb=warped_rgb,
+                    templ_rgb=templ_rgb_page,
+                    init_box_xyxy=refined_box,
+                    page_W=Wt,
+                    page_H=Ht,
+                    pad_px=pad,
+                    min_conf=float(f.get("tesseract_detector_min_conf", tesseract_detector_min_conf)),
+                    min_union_area_px=int(f.get("tesseract_detector_min_union_area_px", tesseract_detector_min_union_area_px)),
+                )
+                refine_steps.append({"tesseract_detector_refine": diag_tm})
 
             if enable_scan_line_refine and value_type == "free_text":
                 max_lines = int(f.get("scan_line_max_lines", 1))
