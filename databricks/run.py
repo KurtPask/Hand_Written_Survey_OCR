@@ -28,6 +28,9 @@ ENABLE_INK_DELTA_REFINE   = True
 INK_DELTA_SEARCH_PX       = 34
 INK_DELTA_STEP_PX         = 2
 INK_DELTA_MIN_RATIO       = 0.010
+ENABLE_TESS_DETECTOR_REFINE = True
+TESS_DETECTOR_MIN_CONF      = 20.0
+TESS_DETECTOR_MIN_UNION_PX  = 180
 EMPTY_INK_THRESH          = 0.00025   # retain faint pencil while still filtering near-empty fields
 
 # ---- 5) DEBUG ----
@@ -75,6 +78,9 @@ print(
     f"ink_delta_search_px={INK_DELTA_SEARCH_PX}, "
     f"ink_delta_step_px={INK_DELTA_STEP_PX}, "
     f"ink_delta_min_ratio={INK_DELTA_MIN_RATIO}, "
+    f"tess_detector={ENABLE_TESS_DETECTOR_REFINE}, "
+    f"tess_min_conf={TESS_DETECTOR_MIN_CONF}, "
+    f"tess_min_union_px={TESS_DETECTOR_MIN_UNION_PX}, "
     f"empty_ink_thresh={EMPTY_INK_THRESH}"
 )
 if debug_dir:
@@ -160,6 +166,9 @@ for i, pdf_path in enumerate(pdfs, start=1):
             ink_delta_search_px=INK_DELTA_SEARCH_PX,
             ink_delta_step_px=INK_DELTA_STEP_PX,
             ink_delta_min_ratio=INK_DELTA_MIN_RATIO,
+            enable_tesseract_detector_refine=ENABLE_TESS_DETECTOR_REFINE,
+            tesseract_detector_min_conf=TESS_DETECTOR_MIN_CONF,
+            tesseract_detector_min_union_area_px=TESS_DETECTOR_MIN_UNION_PX,
             empty_ink_thresh=EMPTY_INK_THRESH,
 
             debug_dir=this_debug_dir,
