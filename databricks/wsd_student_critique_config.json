@@ -260,7 +260,13 @@
             "x_gap_norm": 0.012,
             "y_pad_norm": 0.01
           },
-          "max_new_tokens": 8
+          "max_new_tokens": 8,
+          "ink_delta_search_px": 30,
+          "ink_delta_step_px": 2,
+          "ink_delta_min_ratio": 0.008,
+          "local_match_search_px": 70,
+          "local_match_min_score": 0.14,
+          "pad_px": 4
         },
         {
           "id": "sec1.b_rating",
@@ -272,7 +278,13 @@
             "x_gap_norm": 0.012,
             "y_pad_norm": 0.01
           },
-          "max_new_tokens": 8
+          "max_new_tokens": 8,
+          "ink_delta_search_px": 30,
+          "ink_delta_step_px": 2,
+          "ink_delta_min_ratio": 0.008,
+          "local_match_search_px": 70,
+          "local_match_min_score": 0.14,
+          "pad_px": 4
         },
         {
           "id": "sec2.a_yesno",
@@ -284,7 +296,13 @@
             "x_gap_norm": 0.012,
             "y_pad_norm": 0.01
           },
-          "max_new_tokens": 8
+          "max_new_tokens": 8,
+          "ink_delta_search_px": 30,
+          "ink_delta_step_px": 2,
+          "ink_delta_min_ratio": 0.008,
+          "local_match_search_px": 70,
+          "local_match_min_score": 0.14,
+          "pad_px": 4
         },
         {
           "id": "sec2.b_yesno",
@@ -296,7 +314,13 @@
             "x_gap_norm": 0.012,
             "y_pad_norm": 0.01
           },
-          "max_new_tokens": 8
+          "max_new_tokens": 8,
+          "ink_delta_search_px": 30,
+          "ink_delta_step_px": 2,
+          "ink_delta_min_ratio": 0.008,
+          "local_match_search_px": 70,
+          "local_match_min_score": 0.14,
+          "pad_px": 4
         },
         {
           "id": "sec2.c_yesno",
@@ -308,7 +332,13 @@
             "x_gap_norm": 0.012,
             "y_pad_norm": 0.01
           },
-          "max_new_tokens": 8
+          "max_new_tokens": 8,
+          "ink_delta_search_px": 30,
+          "ink_delta_step_px": 2,
+          "ink_delta_min_ratio": 0.008,
+          "local_match_search_px": 70,
+          "local_match_min_score": 0.14,
+          "pad_px": 4
         },
         {
           "id": "sec2.d_yesno",
@@ -320,7 +350,13 @@
             "x_gap_norm": 0.012,
             "y_pad_norm": 0.01
           },
-          "max_new_tokens": 8
+          "max_new_tokens": 8,
+          "ink_delta_search_px": 30,
+          "ink_delta_step_px": 2,
+          "ink_delta_min_ratio": 0.008,
+          "local_match_search_px": 70,
+          "local_match_min_score": 0.14,
+          "pad_px": 4
         },
         {
           "id": "sec3.a_yesno",
@@ -332,7 +368,13 @@
             "x_gap_norm": 0.012,
             "y_pad_norm": 0.01
           },
-          "max_new_tokens": 8
+          "max_new_tokens": 8,
+          "ink_delta_search_px": 30,
+          "ink_delta_step_px": 2,
+          "ink_delta_min_ratio": 0.008,
+          "local_match_search_px": 70,
+          "local_match_min_score": 0.14,
+          "pad_px": 4
         },
         {
           "id": "sec3.b_yesno",
@@ -344,7 +386,13 @@
             "x_gap_norm": 0.012,
             "y_pad_norm": 0.01
           },
-          "max_new_tokens": 8
+          "max_new_tokens": 8,
+          "ink_delta_search_px": 30,
+          "ink_delta_step_px": 2,
+          "ink_delta_min_ratio": 0.008,
+          "local_match_search_px": 70,
+          "local_match_min_score": 0.14,
+          "pad_px": 4
         },
         {
           "id": "sec3.c_yesno",
@@ -356,7 +404,13 @@
             "x_gap_norm": 0.012,
             "y_pad_norm": 0.01
           },
-          "max_new_tokens": 8
+          "max_new_tokens": 8,
+          "ink_delta_search_px": 30,
+          "ink_delta_step_px": 2,
+          "ink_delta_min_ratio": 0.008,
+          "local_match_search_px": 70,
+          "local_match_min_score": 0.14,
+          "pad_px": 4
         },
         {
           "id": "sec4.a_yesno",
@@ -368,7 +422,13 @@
             "x_gap_norm": 0.012,
             "y_pad_norm": 0.01
           },
-          "max_new_tokens": 8
+          "max_new_tokens": 8,
+          "ink_delta_search_px": 30,
+          "ink_delta_step_px": 2,
+          "ink_delta_min_ratio": 0.008,
+          "local_match_search_px": 70,
+          "local_match_min_score": 0.14,
+          "pad_px": 4
         },
         {
           "id": "sec4.b_yesno",
@@ -380,7 +440,13 @@
             "x_gap_norm": 0.012,
             "y_pad_norm": 0.01
           },
-          "max_new_tokens": 8
+          "max_new_tokens": 8,
+          "ink_delta_search_px": 30,
+          "ink_delta_step_px": 2,
+          "ink_delta_min_ratio": 0.008,
+          "local_match_search_px": 70,
+          "local_match_min_score": 0.14,
+          "pad_px": 4
         },
         {
           "id": "sec4.c_yesno",
@@ -392,7 +458,13 @@
             "x_gap_norm": 0.012,
             "y_pad_norm": 0.01
           },
-          "max_new_tokens": 8
+          "max_new_tokens": 8,
+          "ink_delta_search_px": 30,
+          "ink_delta_step_px": 2,
+          "ink_delta_min_ratio": 0.008,
+          "local_match_search_px": 70,
+          "local_match_min_score": 0.14,
+          "pad_px": 4
         }
       ]
     },
@@ -531,7 +603,8 @@
           "yproj_min_band_h": 34,
           "pad_px": 8,
           "local_match_search_px": 110,
-          "local_match_min_score": 0.16
+          "local_match_min_score": 0.16,
+          "scan_line_min_line_length_frac": 0.42
         },
         {
           "id": "training.b_response",
@@ -553,7 +626,8 @@
           "yproj_min_band_h": 34,
           "pad_px": 8,
           "local_match_search_px": 110,
-          "local_match_min_score": 0.16
+          "local_match_min_score": 0.16,
+          "scan_line_min_line_length_frac": 0.42
         },
         {
           "id": "facilities.a_response",
@@ -575,7 +649,8 @@
           "yproj_min_band_h": 34,
           "pad_px": 8,
           "local_match_search_px": 110,
-          "local_match_min_score": 0.16
+          "local_match_min_score": 0.16,
+          "scan_line_min_line_length_frac": 0.42
         },
         {
           "id": "facilities.b_response",
@@ -597,7 +672,8 @@
           "yproj_min_band_h": 34,
           "pad_px": 8,
           "local_match_search_px": 110,
-          "local_match_min_score": 0.16
+          "local_match_min_score": 0.16,
+          "scan_line_min_line_length_frac": 0.42
         },
         {
           "id": "instructors.a_response",
@@ -619,7 +695,8 @@
           "yproj_min_band_h": 34,
           "pad_px": 8,
           "local_match_search_px": 110,
-          "local_match_min_score": 0.16
+          "local_match_min_score": 0.16,
+          "scan_line_min_line_length_frac": 0.42
         },
         {
           "id": "instructors.b_response",
@@ -641,7 +718,8 @@
           "yproj_min_band_h": 34,
           "pad_px": 8,
           "local_match_search_px": 110,
-          "local_match_min_score": 0.16
+          "local_match_min_score": 0.16,
+          "scan_line_min_line_length_frac": 0.42
         },
         {
           "id": "recruit_feedback.a_response",
@@ -663,7 +741,8 @@
           "yproj_min_band_h": 34,
           "pad_px": 8,
           "local_match_search_px": 110,
-          "local_match_min_score": 0.16
+          "local_match_min_score": 0.16,
+          "scan_line_min_line_length_frac": 0.42
         }
       ]
     }

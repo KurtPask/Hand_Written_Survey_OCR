@@ -925,6 +925,7 @@ def refine_ruled_box_using_scan_lines(
     init_box_xyxy: List[int],
     pad_px: int,
     max_lines: int = 1,
+    min_line_length_frac: float = 0.30,
     above_pad: int = 70,
     below_pad: int = 45,
     x_expand: int = 15,
@@ -937,7 +938,7 @@ def refine_ruled_box_using_scan_lines(
     init_box_xyxy = clamp_box(init_box_xyxy, W, H)
 
     crop_g = crop_gray(warped_gray, init_box_xyxy, pad=pad_px)
-    lines = detect_horizontal_lines(crop_g, min_len_frac=0.30)
+    lines = detect_horizontal_lines(crop_g, min_len_frac=min_line_length_frac)
 
     diag = {"found_lines": len(lines)}
     if not lines:
@@ -958,6 +959,80 @@ def refine_ruled_box_using_scan_lines(
     refined = clamp_box(refined, W, H)
 
     diag["line_boxes"] = use
+    diag["refined_box_xyxy"] = refined
+    return refined, diag
+
+def _window_sum_from_integral(ii: np.ndarray, x0: int, y0: int, x1: int, y1: int) -> float:
+    """
+    Sum on [y0:y1, x0:x1] from cv2.integral output.
+    """
+    return float(ii[y1, x1] - ii[y0, x1] - ii[y1, x0] + ii[y0, x0])
+
+def refine_box_by_ink_delta_peak(
+    scan_gray: np.ndarray,
+    templ_gray: np.ndarray,
+    init_box_xyxy: List[int],
+    search_px: int = 36,
+    step_px: int = 2,
+    min_ink_delta_ratio: float = 0.010,
+) -> Tuple[List[int], Dict[str, Any]]:
+    """
+    Slide a fixed-size window around init_box and choose the location that maximizes
+    scan-vs-template delta ink. Useful for tiny handwritten fields where edge/template
+    matching is unstable.
+    """
+    H, W = scan_gray.shape[:2]
+    box = clamp_box(init_box_xyxy, W, H)
+    x0, y0, x1, y1 = box
+    bw = max(1, x1 - x0)
+    bh = max(1, y1 - y0)
+
+    sx0 = max(0, x0 - search_px)
+    sy0 = max(0, y0 - search_px)
+    sx1 = min(W, x1 + search_px)
+    sy1 = min(H, y1 + search_px)
+
+    if (sx1 - sx0) < bw or (sy1 - sy0) < bh:
+        return box, {"ok": False, "reason": "search_window_too_small"}
+
+    sg = normalize_for_ocr(scan_gray)
+    tg = normalize_for_ocr(templ_gray)
+    diff = cv2.absdiff(sg, tg)
+    diff = cv2.GaussianBlur(diff, (3, 3), 0)
+
+    # dynamic threshold for faint ink while rejecting low-level scanner noise
+    q = float(np.percentile(diff, 85))
+    thr = int(max(10, min(55, q)))
+    ink = (diff >= thr).astype(np.uint8)
+
+    ii = cv2.integral(ink)
+
+    best_score = -1.0
+    best_xy = (x0, y0)
+    for yy in range(sy0, sy1 - bh + 1, max(1, step_px)):
+        for xx in range(sx0, sx1 - bw + 1, max(1, step_px)):
+            s = _window_sum_from_integral(ii, xx, yy, xx + bw, yy + bh)
+            if s > best_score:
+                best_score = s
+                best_xy = (xx, yy)
+
+    ink_ratio = float(best_score / max(1.0, bw * bh))
+    diag = {
+        "ok": ink_ratio >= min_ink_delta_ratio,
+        "ink_ratio": ink_ratio,
+        "min_ink_delta_ratio": float(min_ink_delta_ratio),
+        "search_px": int(search_px),
+        "step_px": int(step_px),
+        "threshold": int(thr),
+    }
+
+    if ink_ratio < min_ink_delta_ratio:
+        return box, diag
+
+    nx0, ny0 = best_xy
+    refined = clamp_box([nx0, ny0, nx0 + bw, ny0 + bh], W, H)
+    diag["dx"] = int(nx0 - x0)
+    diag["dy"] = int(ny0 - y0)
     diag["refined_box_xyxy"] = refined
     return refined, diag
 
@@ -1108,6 +1183,10 @@ def ocr_pdf_with_form_config(
     enable_local_template_match_refine: bool = True,
     local_match_search_px: int = 90,
     local_match_min_score: float = 0.20,
+    enable_ink_delta_refine: bool = True,
+    ink_delta_search_px: int = 36,
+    ink_delta_step_px: int = 2,
+    ink_delta_min_ratio: float = 0.010,
     empty_ink_thresh: float = 0.0005,  # if ink coverage under this => treat as blank
 
     debug_dir: Optional[str] = None,
@@ -1233,6 +1312,20 @@ def ocr_pdf_with_form_config(
                 )
                 refine_steps.append({"local_template_match_refine": diag0})
 
+            if enable_ink_delta_refine and value_type in ("rating_1_5", "yes_no"):
+                delta_search_px = int(f.get("ink_delta_search_px", ink_delta_search_px))
+                delta_step_px = int(f.get("ink_delta_step_px", ink_delta_step_px))
+                delta_min_ratio = float(f.get("ink_delta_min_ratio", ink_delta_min_ratio))
+                refined_box, diag0b = refine_box_by_ink_delta_peak(
+                    scan_gray=warped_gray,
+                    templ_gray=templ_gray,
+                    init_box_xyxy=refined_box,
+                    search_px=delta_search_px,
+                    step_px=max(1, delta_step_px),
+                    min_ink_delta_ratio=delta_min_ratio,
+                )
+                refine_steps.append({"ink_delta_refine": diag0b})
+
             if enable_scan_line_refine and value_type == "free_text":
                 max_lines = int(f.get("scan_line_max_lines", 1))
                 above_pad = int(f.get("scan_line_above_pad_px", 70))
@@ -1242,6 +1335,7 @@ def ocr_pdf_with_form_config(
                     init_box_xyxy=refined_box,
                     pad_px=pad,
                     max_lines=max_lines,
+                    min_line_length_frac=float(f.get("scan_line_min_line_length_frac", 0.30)),
                     above_pad=above_pad,
                     below_pad=below_pad,
                     x_expand=int(f.get("scan_line_x_expand_px", 15)),

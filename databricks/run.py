@@ -24,6 +24,10 @@ ENABLE_COMPONENT_TIGHTEN= True
 ENABLE_LOCAL_MATCH_REFINE = True
 LOCAL_MATCH_SEARCH_PX     = 90
 LOCAL_MATCH_MIN_SCORE     = 0.20
+ENABLE_INK_DELTA_REFINE   = True
+INK_DELTA_SEARCH_PX       = 34
+INK_DELTA_STEP_PX         = 2
+INK_DELTA_MIN_RATIO       = 0.010
 EMPTY_INK_THRESH          = 0.00025   # retain faint pencil while still filtering near-empty fields
 
 # ---- 5) DEBUG ----
@@ -67,6 +71,10 @@ print(
     f"local_min_score={LOCAL_MATCH_MIN_SCORE}, "
     f"yproj={ENABLE_YPROJ_TIGHTEN}, "
     f"components={ENABLE_COMPONENT_TIGHTEN}, "
+    f"ink_delta={ENABLE_INK_DELTA_REFINE}, "
+    f"ink_delta_search_px={INK_DELTA_SEARCH_PX}, "
+    f"ink_delta_step_px={INK_DELTA_STEP_PX}, "
+    f"ink_delta_min_ratio={INK_DELTA_MIN_RATIO}, "
     f"empty_ink_thresh={EMPTY_INK_THRESH}"
 )
 if debug_dir:
@@ -148,6 +156,10 @@ for i, pdf_path in enumerate(pdfs, start=1):
             enable_local_template_match_refine=ENABLE_LOCAL_MATCH_REFINE,
             local_match_search_px=LOCAL_MATCH_SEARCH_PX,
             local_match_min_score=LOCAL_MATCH_MIN_SCORE,
+            enable_ink_delta_refine=ENABLE_INK_DELTA_REFINE,
+            ink_delta_search_px=INK_DELTA_SEARCH_PX,
+            ink_delta_step_px=INK_DELTA_STEP_PX,
+            ink_delta_min_ratio=INK_DELTA_MIN_RATIO,
             empty_ink_thresh=EMPTY_INK_THRESH,
 
             debug_dir=this_debug_dir,
