@@ -1200,6 +1200,143 @@ def refine_box_by_tesseract_detector(
     return refined, diag
 
 
+class CraftTextRegionRefiner:
+    """
+    Optional model-assisted detector for text localization inside a field crop.
+
+    Uses craft_text_detector if available; gracefully degrades when dependency or
+    model weights are unavailable.
+    """
+
+    def __init__(self):
+        self._craft = None
+        self._init_error: Optional[str] = None
+        self._load_once()
+
+    def _load_once(self) -> None:
+        if self._craft is not None or self._init_error is not None:
+            return
+        try:
+            from craft_text_detector import Craft  # type: ignore
+            self._craft = Craft(
+                output_dir=None,
+                crop_type="box",
+                cuda=torch.cuda.is_available(),
+            )
+        except Exception as e:
+            self._init_error = str(e)
+            self._craft = None
+
+    def available(self) -> bool:
+        return self._craft is not None
+
+    def diagnose(self) -> Dict[str, Any]:
+        return {
+            "available": self.available(),
+            "error": self._init_error,
+        }
+
+    def detect_boxes(self, rgb: np.ndarray) -> List[Tuple[int, int, int, int]]:
+        if self._craft is None:
+            return []
+
+        try:
+            pred = self._craft.detect_text(image=rgb)
+        except Exception:
+            return []
+
+        polys = pred.get("boxes") or pred.get("polys") or []
+        out: List[Tuple[int, int, int, int]] = []
+        h, w = rgb.shape[:2]
+        for p in polys:
+            try:
+                a = np.asarray(p, dtype=np.float32).reshape(-1, 2)
+                if a.shape[0] < 4:
+                    continue
+                x0 = int(max(0, np.floor(np.min(a[:, 0]))))
+                y0 = int(max(0, np.floor(np.min(a[:, 1]))))
+                x1 = int(min(w, np.ceil(np.max(a[:, 0]))))
+                y1 = int(min(h, np.ceil(np.max(a[:, 1]))))
+                if (x1 - x0) <= 1 or (y1 - y0) <= 1:
+                    continue
+                out.append((x0, y0, x1, y1))
+            except Exception:
+                continue
+        return out
+
+
+def refine_box_by_craft_detector(
+    scan_rgb: np.ndarray,
+    templ_rgb: np.ndarray,
+    init_box_xyxy: List[int],
+    page_W: int,
+    page_H: int,
+    craft_refiner: Optional[CraftTextRegionRefiner],
+    pad_px: int = 6,
+    min_union_area_px: int = 120,
+) -> Tuple[List[int], Dict[str, Any]]:
+    """
+    Model-assisted field refinement using CRAFT text detector over subtraction-derived
+    ink crop. Especially useful for irregular handwriting where deterministic
+    projection/morphology can drift.
+    """
+    box = clamp_box(init_box_xyxy, page_W, page_H)
+    diag: Dict[str, Any] = {
+        "ok": False,
+        "detector": "craft_mlt_25k",
+    }
+
+    if craft_refiner is None:
+        diag["reason"] = "craft_refiner_not_set"
+        return box, diag
+    if not craft_refiner.available():
+        diag["reason"] = "craft_unavailable"
+        diag["craft_diag"] = craft_refiner.diagnose()
+        return box, diag
+
+    crop_scan = crop_px(scan_rgb, box, pad=pad_px)
+    crop_templ = crop_px(templ_rgb, box, pad=pad_px)
+    if crop_scan.size == 0 or crop_templ.size == 0:
+        diag["reason"] = "empty_crop"
+        return box, diag
+
+    ink_rgb, _, _ = extract_ink_only(crop_scan, crop_templ)
+    ink_gray = cv2.cvtColor(ink_rgb, cv2.COLOR_RGB2GRAY)
+    ink_gray = remove_lines_inpaint(ink_gray)
+    ink_rgb = cv2.cvtColor(ink_gray, cv2.COLOR_GRAY2RGB)
+
+    boxes = craft_refiner.detect_boxes(ink_rgb)
+    diag["word_boxes_found"] = len(boxes)
+    if not boxes:
+        diag["reason"] = "no_boxes"
+        return box, diag
+
+    x0 = min(b[0] for b in boxes)
+    y0 = min(b[1] for b in boxes)
+    x1 = max(b[2] for b in boxes)
+    y1 = max(b[3] for b in boxes)
+
+    union_area = int(max(0, x1 - x0) * max(0, y1 - y0))
+    diag["union_area_px"] = union_area
+    if union_area < int(min_union_area_px):
+        diag["reason"] = "union_too_small"
+        return box, diag
+
+    x0 = max(0, x0 - 8)
+    y0 = max(0, y0 - 6)
+    x1 = min(crop_scan.shape[1], x1 + 8)
+    y1 = min(crop_scan.shape[0], y1 + 6)
+
+    bx0, by0, _, _ = box
+    ox = max(0, bx0 - pad_px)
+    oy = max(0, by0 - pad_px)
+    refined = clamp_box([ox + x0, oy + y0, ox + x1, oy + y1], page_W, page_H)
+
+    diag["ok"] = True
+    diag["refined_box_xyxy"] = refined
+    return refined, diag
+
+
 # -------------------------
 # Value normalization
 # -------------------------
@@ -1279,6 +1416,9 @@ def ocr_pdf_with_form_config(
     template_cache: TemplateCache,
     max_pages: Optional[int] = None,
     field_pad_px: int = 6,
+
+    # Optional model-assisted detector
+    craft_refiner: Optional[CraftTextRegionRefiner] = None,
 
     # NEW: Better crop tightening knobs
     enable_scan_line_refine: bool = True,
@@ -1445,6 +1585,19 @@ def ocr_pdf_with_form_config(
                     min_union_area_px=int(f.get("tesseract_detector_min_union_area_px", tesseract_detector_min_union_area_px)),
                 )
                 refine_steps.append({"tesseract_detector_refine": diag_tm})
+
+            if ftype == "handwriting":
+                refined_box, diag_craft = refine_box_by_craft_detector(
+                    scan_rgb=warped_rgb,
+                    templ_rgb=templ_rgb_page,
+                    init_box_xyxy=refined_box,
+                    page_W=Wt,
+                    page_H=Ht,
+                    craft_refiner=craft_refiner,
+                    pad_px=pad,
+                    min_union_area_px=int(f.get("craft_detector_min_union_area_px", 120)),
+                )
+                refine_steps.append({"craft_detector_refine": diag_craft})
 
             if enable_scan_line_refine and value_type == "free_text":
                 max_lines = int(f.get("scan_line_max_lines", 1))
