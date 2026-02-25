@@ -29,6 +29,7 @@ INK_DELTA_SEARCH_PX       = 34
 INK_DELTA_STEP_PX         = 2
 INK_DELTA_MIN_RATIO       = 0.010
 ENABLE_TESS_DETECTOR_REFINE = True
+ENABLE_CRAFT_DETECTOR_REFINE = True
 TESS_DETECTOR_MIN_CONF      = 20.0
 TESS_DETECTOR_MIN_UNION_PX  = 180
 EMPTY_INK_THRESH          = 0.00025   # retain faint pencil while still filtering near-empty fields
@@ -50,6 +51,9 @@ trocr_printed = load_trocr_bundle(dbutils, FMZ_ROOT, "trocr-base-printed", devic
 trocr_hand    = load_trocr_bundle(dbutils, FMZ_ROOT, "trocr-base-handwritten", device=device)
 
 # ---- 8) PDFs ----
+craft_refiner = CraftTextRegionRefiner() if ENABLE_CRAFT_DETECTOR_REFINE else None
+if craft_refiner is not None:
+    print(f"CRAFT detector available: {craft_refiner.available()} | diag={craft_refiner.diagnose()}")
 pdfs = list_pdfs(dbutils, PDF_INPUT, recurse=RECURSE)
 if MAX_PDFS is not None:
     pdfs = pdfs[:MAX_PDFS]
@@ -79,6 +83,7 @@ print(
     f"ink_delta_step_px={INK_DELTA_STEP_PX}, "
     f"ink_delta_min_ratio={INK_DELTA_MIN_RATIO}, "
     f"tess_detector={ENABLE_TESS_DETECTOR_REFINE}, "
+    f"craft_detector={ENABLE_CRAFT_DETECTOR_REFINE}, "
     f"tess_min_conf={TESS_DETECTOR_MIN_CONF}, "
     f"tess_min_union_px={TESS_DETECTOR_MIN_UNION_PX}, "
     f"empty_ink_thresh={EMPTY_INK_THRESH}"
@@ -155,6 +160,7 @@ for i, pdf_path in enumerate(pdfs, start=1):
             template_cache=template_cache,
             max_pages=MAX_PAGES,
             field_pad_px=FIELD_PAD_PX,
+            craft_refiner=craft_refiner,
 
             enable_scan_line_refine=ENABLE_SCAN_LINE_REFINE,
             enable_yproj_tighten=ENABLE_YPROJ_TIGHTEN,
