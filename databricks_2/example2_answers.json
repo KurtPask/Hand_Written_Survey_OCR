@@ -1,0 +1,49 @@
+{
+    "pg1": {
+        "header": {
+            "course": "BOOTCAMP",
+            "date": "AUG 14 PM",
+            "CIN": "A-950-001",
+            "unit": "RTC",
+            "division": "WATER SURVIVAL",
+            "instructors": "N/A"
+        },
+        "sec1":{
+            "a_0to5": 5,
+            "b_0to5": 5
+        },
+        "sec2": {
+            "a_yesno": "YES",
+            "b_yesno": "YES",
+            "c_yesno": "YES",
+            "d_yesno": "YES"
+        },
+        "sec3": {
+            "a_yesno": "YES",
+            "b_yesno": "YES",
+            "c_yesno": "YES"
+        },
+        "sec4": {
+            "a_yesno": "YES",
+            "b_yesno": "YES",
+            "c_yesno": "YES"
+        }
+    },
+    "pg2": {
+        "training": {
+            "a_freetext":"THE ARM AND HIP TECHNIQUES HELPED AND ESPECIALLY THE SHOULDER POSTURE EXERCISE.",
+            "b_freetext":"YES I THINK THEY WERE HELPFUL SINCE I COULDNT SEE EVERYTHING UNDER THE WATER IN PERSON."
+        },
+        "facilities": {
+            "a_freetext":"NO, THE LOCKERS WERE CLEAN",
+            "b_freetext":null
+        },
+        "instructors": {
+            "a_freetext":"YES.",
+            "b_freetext":"YES. THEY TOLD ME WHAT I NEEDED TO DO DURING MY SWIM. THEY TOLD ME WHAT I NEEDED TO FIX."
+        },
+        "recruit feedback": {
+            "a_freetext":"I THINK EMPHASIZING THE HEAD AND ARMS WILL HELP FOR RECRUITS."
+        }
+    }
+}

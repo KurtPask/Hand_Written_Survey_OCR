@@ -1,0 +1,3 @@
+FOUNDATION_MODEL_ZONE: "s3a://fmz"
+PARSED_PATH: "s3://data/scans_ready"
+RESULTS_PATH: "s3://data/results"

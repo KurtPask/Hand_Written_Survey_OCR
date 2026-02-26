@@ -1,0 +1,49 @@
+{
+    "pg1": {
+        "header": {
+            "course": "BOOTCAMP",
+            "date": "AUG 14 2025",
+            "CIN": "A-950-001",
+            "unit": "RTC",
+            "division": "WATER SURVIVAL",
+            "instructors": null
+        },
+        "sec1":{
+            "a_0to5": 2,
+            "b_0to5": 4
+        },
+        "sec2": {
+            "a_yesno": "YES",
+            "b_yesno": "YES",
+            "c_yesno": "YES",
+            "d_yesno": "YES"
+        },
+        "sec3": {
+            "a_yesno": "YES",
+            "b_yesno": "YES",
+            "c_yesno": "YES"
+        },
+        "sec4": {
+            "a_yesno": "NO",
+            "b_yesno": "NO",
+            "c_yesno": "NO"
+        }
+    },
+    "pg2": {
+        "training": {
+            "a_freetext":"YES THE INSTRUCTION HELPED BUT ALL THE RULES WERN'T EXPLAINED.",
+            "b_freetext":"YES THEY WERE."
+        },
+        "facilities": {
+            "a_freetext":"NO.",
+            "b_freetext":"AVOID SWIMMING ON YOUR BACK THE WHOLE WAY. GIVE A CHOICE ON WHICH STYLE YOU WANT TO DO"
+        },
+        "instructors": {
+            "a_freetext":"YES.",
+            "b_freetext":"THE WAYS TO SWIM YES, THE RULES NO."
+        },
+        "recruit feedback": {
+            "a_freetext":"LET PEOPLE SWIM WITH WHATS COMFORTABLE WITH THEM."
+        }
+    }
+}
